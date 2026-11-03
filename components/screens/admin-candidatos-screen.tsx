@@ -86,6 +86,12 @@ export function AdminCandidatosScreen({ standalone = false }: { standalone?: boo
             >
               Relatório executivo
             </Link>
+            <Link
+              href="/admin/stress"
+              className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/5 transition-colors cursor-pointer"
+            >
+              Stress Test (Bots)
+            </Link>
           </div>
 
           <div className="mt-auto text-xs leading-[1.5] text-[#A9CDB6] pt-6 border-t border-white/10 flex flex-col gap-2">

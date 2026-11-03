@@ -11,7 +11,7 @@ const globalForSql = globalThis as unknown as {
 export const sql =
   globalForSql.sql ??
   postgres(connectionString, {
-    max: 10,
+    max: 25,
     idle_timeout: 20,
     connect_timeout: 10,
   });
