@@ -5,7 +5,7 @@ import { AdminCandidatosScreen } from '@/components/screens/admin-candidatos-scr
 
 export default function AdminPage() {
   return (
-    <main className="min-h-screen bg-[#E9ECE8] py-6 sm:py-10 px-4 flex flex-col items-center justify-center">
+    <main className="min-h-screen w-full bg-[#F6F8F5] m-0 p-0 overflow-x-hidden">
       <AdminCandidatosScreen standalone={true} />
     </main>
   );

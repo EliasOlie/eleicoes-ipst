@@ -19,6 +19,7 @@ export interface CandidateResult {
   width: string;
   pct: string;
   elected: boolean;
+  reachedMajority?: boolean;
   bar: string;
   sit: string;
   sitColor: string;

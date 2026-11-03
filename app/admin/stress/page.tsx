@@ -51,74 +51,75 @@ export default function AdminStressPage() {
   };
 
   return (
-    <div className="flex flex-col gap-3.5 w-full max-w-[1440px] mx-auto min-h-screen">
-      <div className="w-full min-h-[900px] rounded-2xl overflow-hidden flex flex-col md:flex-row bg-[#F6F8F5] shadow-xl border border-[#DCE3DE] my-4 sm:my-8">
-        {/* Sidebar */}
-        <div className="w-full md:w-[248px] shrink-0 bg-[#073D24] text-white p-7 md:py-7 md:px-4.5 flex flex-col gap-8">
+    <div className="w-full min-h-screen flex flex-col md:flex-row bg-[#F6F8F5]">
+      {/* Sidebar */}
+      <aside className="w-full md:w-64 lg:w-72 shrink-0 bg-[#073D24] text-white p-6 md:p-7 flex flex-col justify-between border-r border-[#0A4D2E] min-h-screen no-print">
+        <div className="flex flex-col gap-8">
           <div className="flex items-center gap-3">
             <img
               src="/assets/ipst_logo.jpg"
               alt="IPST"
-              className="w-12 h-12 rounded-xl object-cover block border border-white/10"
+              className="w-12 h-12 rounded-xl object-cover block border border-white/10 shadow-sm"
             />
-            <div className="flex flex-col gap-0.5">
-              <span className="text-[15px] font-bold">Eleição 2026</span>
+            <div className="flex flex-col">
+              <span className="text-[15px] font-bold tracking-tight">Eleição 2026</span>
               <span className="text-xs text-[#A9CDB6]">IP Serra Talhada</span>
             </div>
           </div>
 
-          <div className="flex flex-col gap-1">
+          <nav className="flex flex-col gap-1.5">
             <Link
               href="/admin"
-              className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/5 transition-colors cursor-pointer"
+              className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/10 transition-colors"
             >
               Candidatos e vagas
             </Link>
             <Link
               href="/mesa"
-              className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/5 transition-colors cursor-pointer"
+              className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/10 transition-colors"
             >
               Conferência de ata
             </Link>
             <Link
               href="/projetor"
-              className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/5 transition-colors cursor-pointer"
+              className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/10 transition-colors"
             >
-              Apresentação
+              Apresentação (Telão)
             </Link>
             <Link
               href="/relatorio"
-              className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/5 transition-colors cursor-pointer"
+              className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/10 transition-colors"
             >
               Relatório executivo
             </Link>
-            <div className="p-3 px-3.5 rounded-xl bg-white/14 text-sm font-semibold flex items-center justify-between cursor-default">
+            <div className="p-3 px-3.5 rounded-xl bg-white/15 text-sm font-semibold flex items-center justify-between text-white shadow-xs">
               <span>Stress Test (Bots)</span>
               <Zap size={14} className="text-amber-400" />
             </div>
-          </div>
-
-          <div className="mt-auto text-xs leading-[1.5] text-[#A9CDB6] pt-6 border-t border-white/10 flex flex-col gap-2">
-            <div>
-              <span className="font-semibold text-white">
-                {adminUser ? adminUser.name : 'Conselho da Igreja'}
-              </span>
-              <br />
-              Acesso administrativo
-            </div>
-            {adminUser && (
-              <button
-                onClick={logoutAdmin}
-                className="text-left text-xs text-[#9FD3B1] hover:underline cursor-pointer"
-              >
-                Encerrar sessão
-              </button>
-            )}
-          </div>
+          </nav>
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1 min-w-0 p-6 md:p-10 md:px-12 flex flex-col gap-7 overflow-y-auto">
+        <div className="pt-6 border-t border-white/10 flex flex-col gap-2 text-xs text-[#A9CDB6]">
+          <div>
+            <span className="font-semibold text-white">
+              {adminUser ? adminUser.name : 'Conselho da Igreja'}
+            </span>
+            <br />
+            {adminUser ? 'Acesso autenticado' : 'Acesso administrativo'}
+          </div>
+          {adminUser && (
+            <button
+              onClick={logoutAdmin}
+              className="text-left text-xs text-[#9FD3B1] hover:underline cursor-pointer"
+            >
+              Encerrar sessão
+            </button>
+          )}
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <div className="flex-1 min-w-0 p-6 md:p-10 lg:p-12 flex flex-col gap-8 overflow-y-auto min-h-screen">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-4">
             <div className="flex flex-col gap-1.5">
@@ -316,6 +317,5 @@ export default function AdminStressPage() {
           )}
         </div>
       </div>
-    </div>
   );
 }

@@ -66,6 +66,8 @@ interface ElectionContextType {
   statusBg: string;
   isCompleted: boolean;
   quorumAtingido: boolean;
+  totalComungantes: number;
+  quorumMinimo: number;
 
   // Voter Session
   voterName: string;
@@ -131,6 +133,7 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
   const [receipt, setReceipt] = useState('');
   const [votingError, setVotingError] = useState('');
   const [simulationActive, setSimulationActive] = useState(true);
+  const [totalComungantes, setTotalComungantes] = useState<number>(500);
 
   // Admin user state
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
@@ -158,6 +161,9 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
         setPublishedAt(data.config.publishedAt || '');
         setVdInternal(data.config.vagasDiac || 3);
         setVpInternal(data.config.vagasPresb || 2);
+        if (data.config.totalComungantes) {
+          setTotalComungantes(data.config.totalComungantes);
+        }
       }
 
       if (data.candidates) {
@@ -284,7 +290,8 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
   const majority = Math.floor(published / 2) + 1;
   const maxV = Math.max(1, published);
   const isCompleted = counted >= published && published > 0;
-  const quorumAtingido = published >= QUORUM_MINIMO;
+  const quorumMinimo = Math.ceil(totalComungantes / 3);
+  const quorumAtingido = published >= quorumMinimo;
 
   const statusLabel = !votingOpen
     ? 'Votação não iniciada'
@@ -458,12 +465,15 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
         .sort((a, b) => b.votes - a.votes);
 
       return sorted.map((r, i) => {
-        const elected = r.votes >= majority && i < vagasLimit;
-        const pctVal = Math.round((r.votes / maxV) * 100);
+        // Os mais votados preenchem as vagas disponíveis (desde que tenham ao menos 1 voto)
+        const elected = i < vagasLimit && r.votes > 0;
+        const reachedMajority = r.votes >= majority;
+        const pctVal = maxV > 0 ? Math.round((r.votes / maxV) * 100) : 0;
         return {
           ...r,
           elected,
-          width: `${Math.min(100, (r.votes / maxV) * 100)}%`,
+          reachedMajority,
+          width: `${Math.min(100, maxV > 0 ? (r.votes / maxV) * 100 : 0)}%`,
           bar: elected ? '#9FD3B1' : '#5FA57B',
           pct: `${pctVal}%`,
           sit: elected ? 'Eleito' : isCompleted ? 'Não eleito' : 'Em apuração',
@@ -596,6 +606,8 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
     statusBg,
     isCompleted,
     quorumAtingido,
+    totalComungantes,
+    quorumMinimo,
     voterName,
     setVoterName,
     voterPhone,

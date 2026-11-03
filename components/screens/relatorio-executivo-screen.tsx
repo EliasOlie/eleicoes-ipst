@@ -2,8 +2,7 @@
 
 import React from 'react';
 import { useElection } from '@/context/election-context';
-import { TOTAL_COMUNGANTES, QUORUM_MINIMO } from '@/lib/mock-data';
-import { Printer, FileDown } from 'lucide-react';
+import { Printer, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 export function RelatorioExecutivoScreen({ standalone = false }: { standalone?: boolean }) {
@@ -20,6 +19,8 @@ export function RelatorioExecutivoScreen({ standalone = false }: { standalone?: 
     statusColor,
     statusBg,
     quorumAtingido,
+    totalComungantes,
+    quorumMinimo,
     adminUser,
     logoutAdmin,
   } = useElection();
@@ -30,59 +31,270 @@ export function RelatorioExecutivoScreen({ standalone = false }: { standalone?: 
     }
   };
 
-  return (
-    <div className={`flex flex-col gap-3.5 ${standalone ? 'w-full max-w-[1440px] mx-auto' : ''}`}>
-      {!standalone && (
-        <div className="text-sm font-semibold text-[#4A574F] no-print">
-          06 · Relatório executivo para a mesa
+  const contentPaper = (
+    <div className="w-full bg-white rounded-2xl shadow-sm border border-[#DCE3DE] p-8 sm:p-12 flex flex-col gap-8 print:border-none print:shadow-none print:p-0 print:m-0 print:rounded-none">
+      {/* Official Header */}
+      <div className="flex items-start gap-5 pb-6 border-b border-[#CBD5CE]">
+        <img
+          src="/assets/ipst_logo.jpg"
+          alt="Logo IPST"
+          className="w-16 h-16 sm:w-20 sm:h-20 object-cover block rounded-xl shadow-xs border border-[#CBD5CE]"
+        />
+        <div className="flex flex-col gap-1">
+          <span className="text-xs tracking-[.15em] uppercase text-[#0A5C36] font-bold">
+            Igreja Presbiteriana de Serra Talhada
+          </span>
+          <h2 className="font-serif text-2xl sm:text-3xl font-semibold leading-tight text-[#15201A]">
+            Relatório da Assembleia Geral Extraordinária — Eleição de Oficiais
+          </h2>
+          <span className="text-xs sm:text-sm text-[#4A574F]">
+            Encaminhado ao Conselho da Igreja e à Mesa do Presbitério · Serra Talhada, PE · 2026
+          </span>
         </div>
-      )}
-      <div className="w-[1440px] max-w-full min-h-[1180px] rounded-2xl overflow-hidden flex flex-col md:flex-row bg-[#F6F8F5] shadow-[0_1px_0_#D5DCD7,0_20px_50px_rgba(7,61,36,.12)] mx-auto border border-[#DCE3DE] print:shadow-none print:border-none print:w-full print:min-h-0 print:bg-white">
-        {/* Sidebar (hidden during print) */}
-        <div className="w-full md:w-[248px] shrink-0 bg-[#073D24] text-white p-7 md:py-7 md:px-4.5 flex flex-col gap-8 no-print">
-          <div className="flex items-center gap-3">
-            <img
-              src="/assets/ipst_logo.jpg"
-              alt="IPST"
-              className="w-12 h-12 rounded-xl object-cover block border border-white/10"
-            />
-            <div className="flex flex-col gap-0.5">
-              <span className="text-[15px] font-bold">Eleição 2026</span>
-              <span className="text-xs text-[#A9CDB6]">IP Serra Talhada</span>
+      </div>
+
+      {/* 1. Quorum Section */}
+      <div className="flex flex-col gap-3">
+        <div className="text-xs font-bold tracking-[.1em] uppercase text-[#0A5C36]">
+          1. Quórum Constitucional
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 border border-[#DCE3DE] rounded-xl overflow-hidden divide-y sm:divide-y-0 sm:divide-x divide-[#DCE3DE]">
+          <div className="p-4 flex flex-col gap-1 bg-[#FDFEFE]">
+            <span className="text-xs text-[#6B776F]">Membros comungantes</span>
+            <span className="text-2xl font-bold text-[#15201A] tabular-nums">{totalComungantes}</span>
+          </div>
+          <div className="p-4 flex flex-col gap-1 bg-[#FDFEFE]">
+            <span className="text-xs text-[#6B776F]">Presentes conferidos em ata</span>
+            <span className="text-2xl font-bold text-[#15201A] tabular-nums">{published}</span>
+          </div>
+          <div className="p-4 flex flex-col gap-1 bg-[#FDFEFE]">
+            <span className="text-xs text-[#6B776F]">Quórum mínimo (1/3)</span>
+            <span className="text-2xl font-bold text-[#15201A] tabular-nums">{quorumMinimo}</span>
+          </div>
+          <div className="p-4 flex flex-col gap-1 bg-[#FDFEFE]">
+            <span className="text-xs text-[#6B776F]">Situação da Assembleia</span>
+            <span
+              className={`text-lg sm:text-xl font-bold ${
+                quorumAtingido ? 'text-[#0A5C36]' : 'text-amber-700'
+              }`}
+            >
+              {quorumAtingido ? 'Atingido (Válido)' : 'Não atingido'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Escrutínio Section */}
+      <div className="flex flex-col gap-3">
+        <div className="text-xs font-bold tracking-[.1em] uppercase text-[#0A5C36]">
+          2. Escrutínio e Apuração
+        </div>
+        <div className="p-4 rounded-xl bg-[#F6F8F5] border border-[#DCE3DE] text-sm leading-relaxed text-[#33433A] flex flex-wrap gap-x-6 gap-y-2">
+          <span>
+            Cédulas apuradas: <strong className="font-bold text-[#15201A]">{counted}</strong> de {published}
+          </span>
+          <span>·</span>
+          <span>
+            Referência de maioria: <strong className="font-bold text-[#15201A]">{majority} votos</strong>
+          </span>
+          <span>·</span>
+          <span>
+            Votos em branco: <strong className="font-bold text-[#15201A]">{blanks}</strong>
+          </span>
+        </div>
+      </div>
+
+      {/* 3. Diaconato Table */}
+      <div className="flex flex-col gap-3">
+        <div className="flex justify-between items-baseline border-b border-[#CBD5CE] pb-2">
+          <div className="flex items-center gap-2.5">
+            <h3 className="font-serif text-xl sm:text-2xl font-semibold text-[#15201A]">Diaconato</h3>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#E7F0EA] text-[#0A5C36]">
+              {vagasDiac} {vagasDiac === 1 ? 'vaga' : 'vagas'}
+            </span>
+          </div>
+          <span className="text-xs sm:text-sm text-[#6B776F]">
+            {resDiac.filter((c) => c.elected).length} de {vagasDiac} eleitos
+          </span>
+        </div>
+
+        <div className="grid grid-cols-[1fr_80px_100px_120px] text-xs font-bold text-[#6B776F] py-2 border-b border-[#CBD5CE]">
+          <span>Candidato</span>
+          <span className="text-right">Votos</span>
+          <span className="text-right">% presentes</span>
+          <span className="text-right">Situação</span>
+        </div>
+
+        <div className="flex flex-col divide-y divide-[#EEF1EE]">
+          {resDiac.length === 0 ? (
+            <div className="py-4 text-center text-xs text-[#6B776F]">
+              Nenhum candidato a diácono apurado.
             </div>
+          ) : (
+            resDiac.map((r, rankIdx) => (
+              <div
+                key={r.id}
+                className={`grid grid-cols-[1fr_80px_100px_120px] items-center text-sm py-2.5 ${
+                  r.elected ? 'bg-[#F2F7F4]/60 -mx-2 px-2 rounded-lg' : ''
+                }`}
+              >
+                <span className="font-semibold text-[#15201A] flex items-center gap-2">
+                  <span className="text-xs text-[#6B776F] font-mono">#{rankIdx + 1}</span>
+                  <span>{r.name}</span>
+                </span>
+                <span className="text-right tabular-nums font-bold text-[#15201A]">
+                  {r.votes}
+                </span>
+                <span className="text-right tabular-nums text-[#5A675F]">{r.pct}</span>
+                <span
+                  className="justify-self-end px-2.5 py-0.5 rounded-md text-xs font-bold"
+                  style={{ backgroundColor: r.sitBg, color: r.sitColor }}
+                >
+                  {r.sit}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* 4. Presbiterato Table */}
+      <div className="flex flex-col gap-3">
+        <div className="flex justify-between items-baseline border-b border-[#CBD5CE] pb-2">
+          <div className="flex items-center gap-2.5">
+            <h3 className="font-serif text-xl sm:text-2xl font-semibold text-[#15201A]">Presbiterato</h3>
+            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-[#E7F0EA] text-[#0A5C36]">
+              {vagasPresb} {vagasPresb === 1 ? 'vaga' : 'vagas'}
+            </span>
+          </div>
+          <span className="text-xs sm:text-sm text-[#6B776F]">
+            {resPresb.filter((c) => c.elected).length} de {vagasPresb} eleitos
+          </span>
+        </div>
+
+        <div className="grid grid-cols-[1fr_80px_100px_120px] text-xs font-bold text-[#6B776F] py-2 border-b border-[#CBD5CE]">
+          <span>Candidato</span>
+          <span className="text-right">Votos</span>
+          <span className="text-right">% presentes</span>
+          <span className="text-right">Situação</span>
+        </div>
+
+        <div className="flex flex-col divide-y divide-[#EEF1EE]">
+          {resPresb.length === 0 ? (
+            <div className="py-4 text-center text-xs text-[#6B776F]">
+              Nenhum candidato a presbítero apurado.
+            </div>
+          ) : (
+            resPresb.map((r, rankIdx) => (
+              <div
+                key={r.id}
+                className={`grid grid-cols-[1fr_80px_100px_120px] items-center text-sm py-2.5 ${
+                  r.elected ? 'bg-[#F2F7F4]/60 -mx-2 px-2 rounded-lg' : ''
+                }`}
+              >
+                <span className="font-semibold text-[#15201A] flex items-center gap-2">
+                  <span className="text-xs text-[#6B776F] font-mono">#{rankIdx + 1}</span>
+                  <span>{r.name}</span>
+                </span>
+                <span className="text-right tabular-nums font-bold text-[#15201A]">
+                  {r.votes}
+                </span>
+                <span className="text-right tabular-nums text-[#5A675F]">{r.pct}</span>
+                <span
+                  className="justify-self-end px-2.5 py-0.5 rounded-md text-xs font-bold"
+                  style={{ backgroundColor: r.sitBg, color: r.sitColor }}
+                >
+                  {r.sit}
+                </span>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* 5. Signatures Block */}
+      <div className="pt-8 border-t border-[#CBD5CE] flex flex-col gap-8 break-inside-avoid">
+        <div className="text-xs text-[#6B776F] text-center italic">
+          Certificamos que a presente apuração seguiu integralmente a Constituição da Igreja Presbiteriana do Brasil (CI/IPB), o sigilo incondicional do voto e as deliberações da Assembleia Geral Extraordinária.
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 pt-4">
+          <div className="flex flex-col items-center gap-1 text-center">
+            <div className="w-full border-b border-[#6B776F] mb-2"></div>
+            <span className="text-xs font-bold text-[#15201A]">Pastor Presidente</span>
+            <span className="text-[11px] text-[#6B776F]">Presidente da Mesa</span>
           </div>
 
-          <div className="flex flex-col gap-1">
-            <Link
-              href="/admin"
-              className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/5 transition-colors cursor-pointer"
-            >
-              Candidatos e vagas
-            </Link>
-            <Link
-              href="/mesa"
-              className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/5 transition-colors cursor-pointer"
-            >
-              Conferência de ata
-            </Link>
-            <Link
-              href="/projetor"
-              className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/5 transition-colors cursor-pointer"
-            >
-              Apresentação
-            </Link>
-            <div className="p-3 px-3.5 rounded-xl bg-white/14 text-sm font-semibold cursor-default">
-              Relatório executivo
-            </div>
-            <Link
-              href="/admin/stress"
-              className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/5 transition-colors cursor-pointer"
-            >
-              Stress Test (Bots)
-            </Link>
+          <div className="flex flex-col items-center gap-1 text-center">
+            <div className="w-full border-b border-[#6B776F] mb-2"></div>
+            <span className="text-xs font-bold text-[#15201A]">1º Secretário da Mesa</span>
+            <span className="text-[11px] text-[#6B776F]">Conferência e Ata</span>
           </div>
 
-          <div className="mt-auto text-xs leading-[1.5] text-[#A9CDB6] pt-6 border-t border-white/10 flex flex-col gap-2">
+          <div className="flex flex-col items-center gap-1 text-center">
+            <div className="w-full border-b border-[#6B776F] mb-2"></div>
+            <span className="text-xs font-bold text-[#15201A]">Comissão Escrutinadora</span>
+            <span className="text-[11px] text-[#6B776F]">Fiscalização da Apuração</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Standalone: Full Screen Desktop App Layout with Docked Left Sidebar
+  if (standalone) {
+    return (
+      <div className="w-full min-h-screen flex flex-col md:flex-row bg-[#F6F8F5]">
+        {/* Left Sidebar - Truly docked to screen edge */}
+        <aside className="w-full md:w-64 lg:w-72 shrink-0 bg-[#073D24] text-white p-6 md:p-7 flex flex-col justify-between border-r border-[#0A4D2E] min-h-screen no-print">
+          <div className="flex flex-col gap-8">
+            {/* Brand */}
+            <div className="flex items-center gap-3">
+              <img
+                src="/assets/ipst_logo.jpg"
+                alt="IPST"
+                className="w-12 h-12 rounded-xl object-cover block border border-white/10 shadow-sm"
+              />
+              <div className="flex flex-col">
+                <span className="text-[15px] font-bold tracking-tight">Eleição 2026</span>
+                <span className="text-xs text-[#A9CDB6]">IP Serra Talhada</span>
+              </div>
+            </div>
+
+            {/* Navigation */}
+            <nav className="flex flex-col gap-1.5">
+              <Link
+                href="/admin"
+                className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/10 transition-colors"
+              >
+                Candidatos e vagas
+              </Link>
+              <Link
+                href="/mesa"
+                className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/10 transition-colors"
+              >
+                Conferência de ata
+              </Link>
+              <Link
+                href="/projetor"
+                className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/10 transition-colors"
+              >
+                Apresentação (Telão)
+              </Link>
+              <div className="p-3 px-3.5 rounded-xl bg-white/15 text-sm font-semibold text-white shadow-xs">
+                Relatório executivo
+              </div>
+              <Link
+                href="/admin/stress"
+                className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/10 transition-colors"
+              >
+                Stress Test (Bots)
+              </Link>
+            </nav>
+          </div>
+
+          {/* User footer */}
+          <div className="pt-6 border-t border-white/10 flex flex-col gap-2 text-xs text-[#A9CDB6]">
             <div>
               <span className="font-semibold text-white">
                 {adminUser ? adminUser.name : 'Conselho da Igreja'}
@@ -106,203 +318,72 @@ export function RelatorioExecutivoScreen({ standalone = false }: { standalone?: 
               </Link>
             )}
           </div>
-        </div>
+        </aside>
 
-        {/* Content Area */}
-        <div className="flex-1 min-w-0 p-6 md:p-8 md:px-12 flex flex-col gap-6 overflow-y-auto print:p-0">
-          {/* Header Controls (hidden on print) */}
-          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 no-print">
+        {/* Content Area - Full remaining width */}
+        <div className="flex-1 min-w-0 bg-[#F6F8F5] p-6 sm:p-8 lg:p-12 overflow-y-auto print:p-0 print:bg-white flex flex-col items-center">
+          {/* Top Action Bar */}
+          <div className="max-w-4xl w-full flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 no-print">
             <div className="flex items-center gap-3">
-              <h3 className="font-serif text-2xl md:text-[28px] font-semibold text-[#15201A]">
+              <h1 className="font-serif text-2xl sm:text-3xl font-semibold text-[#15201A]">
                 Relatório executivo
-              </h3>
+              </h1>
               <span
-                className="px-3 py-1.5 rounded-full text-[13px] font-bold"
+                className="px-3 py-1 rounded-full text-xs font-bold"
                 style={{ backgroundColor: statusBg, color: statusColor }}
               >
                 {statusLabel}
               </span>
             </div>
+
             <div className="flex items-center gap-2.5">
               <button
                 onClick={handlePrint}
-                className="h-[42px] px-4.5 rounded-xl border-[1.5px] border-[#CBD5CE] bg-white hover:bg-[#EEF4F0] text-[#15201A] text-sm font-semibold cursor-pointer flex items-center gap-2 transition-colors"
+                className="h-10 px-4 rounded-xl bg-[#073D24] hover:bg-[#0A5C36] text-white text-sm font-semibold flex items-center gap-2 shadow-sm transition-all cursor-pointer"
               >
-                <Printer size={16} />
-                Imprimir
-              </button>
-              <button
-                onClick={handlePrint}
-                className="h-[42px] px-4.5 rounded-xl border-none bg-[#0A5C36] hover:bg-[#073D24] text-white text-sm font-semibold cursor-pointer flex items-center gap-2 transition-colors shadow-sm"
-              >
-                <FileDown size={16} />
-                Exportar PDF
+                <Printer className="w-4 h-4" />
+                <span>Imprimir Relatório</span>
               </button>
             </div>
           </div>
 
-          {/* Formal Printable Document Sheet */}
-          <div className="self-center w-full max-w-[880px] bg-white border border-[#DCE3DE] rounded-md p-8 md:p-14 md:px-16 flex flex-col gap-8 shadow-sm print:border-none print:shadow-none print:p-0 print:max-w-none">
-            {/* Document Header */}
-            <div className="flex items-center gap-5 pb-6 border-b-2 border-[#0A5C36]">
-              <img
-                src="/assets/ipst_logo.jpg"
-                alt="Logo IPST"
-                className="w-[76px] h-[76px] object-cover block rounded-lg shadow-xs"
-              />
-              <div className="flex flex-col gap-1">
-                <span className="text-xs tracking-[.1em] uppercase text-[#0A5C36] font-bold">
-                  Igreja Presbiteriana de Serra Talhada
-                </span>
-                <span className="font-serif text-2xl md:text-[26px] font-semibold leading-[1.2] text-[#15201A]">
-                  Relatório da Assembleia Geral Extraordinária — Eleição de Oficiais
-                </span>
-                <span className="text-sm text-[#4A574F]">
-                  Encaminhado à mesa do Presbitério · Serra Talhada, PE · 2026
-                </span>
-              </div>
-            </div>
+          {/* Printable Document Paper */}
+          <div className="max-w-4xl w-full">
+            {contentPaper}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-            {/* 1. Quorum */}
-            <div className="flex flex-col gap-3.5">
-              <div className="text-xs font-bold tracking-[.1em] uppercase text-[#0A5C36]">
-                1. Quórum
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 border border-[#DCE3DE] rounded-lg overflow-hidden divide-y sm:divide-y-0 sm:divide-x divide-[#DCE3DE]">
-                <div className="p-3.5 px-4 flex flex-col gap-1 bg-[#FDFEFE]">
-                  <span className="text-xs text-[#6B776F]">Membros comungantes</span>
-                  <span className="text-2xl font-bold text-[#15201A]">{TOTAL_COMUNGANTES}</span>
-                </div>
-                <div className="p-3.5 px-4 flex flex-col gap-1 bg-[#FDFEFE]">
-                  <span className="text-xs text-[#6B776F]">Presentes conferidos em ata</span>
-                  <span className="text-2xl font-bold text-[#15201A]">{published}</span>
-                </div>
-                <div className="p-3.5 px-4 flex flex-col gap-1 bg-[#FDFEFE]">
-                  <span className="text-xs text-[#6B776F]">Quórum mínimo (1/3)</span>
-                  <span className="text-2xl font-bold text-[#15201A]">{QUORUM_MINIMO}</span>
-                </div>
-                <div className="p-3.5 px-4 flex flex-col gap-1 bg-[#FDFEFE]">
-                  <span className="text-xs text-[#6B776F]">Situação</span>
-                  <span className="text-xl font-bold text-[#0A5C36]">
-                    {quorumAtingido ? 'Atingido' : 'Não atingido'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* 2. Escrutinio */}
-            <div className="flex flex-col gap-3.5">
-              <div className="text-xs font-bold tracking-[.1em] uppercase text-[#0A5C36]">
-                2. Escrutínio
-              </div>
-              <div className="text-sm leading-[1.6] text-[#33433A]">
-                Cédulas apuradas: <strong>{counted}</strong> de {published} · Maioria absoluta:{' '}
-                <strong>{majority} votos</strong> · Votos em branco: <strong>{blanks}</strong>
-              </div>
-            </div>
-
-            {/* Diaconato Table */}
-            <div className="flex flex-col gap-2.5">
-              <div className="flex justify-between items-baseline">
-                <span className="font-serif text-xl font-semibold text-[#15201A]">Diaconato</span>
-                <span className="text-[13px] text-[#6B776F] font-medium">{vagasDiac} vagas</span>
-              </div>
-              <div className="grid grid-cols-[1fr_90px_110px_120px] text-xs font-bold text-[#6B776F] py-2 border-b border-[#CBD5CE]">
-                <span>Candidato</span>
-                <span className="text-right">Votos</span>
-                <span className="text-right">% presentes</span>
-                <span className="text-right">Situação</span>
-              </div>
-              <div className="flex flex-col divide-y divide-[#EEF1EE]">
-                {resDiac.length === 0 ? (
-                  <div className="py-4 text-center text-xs text-[#6B776F]">
-                    Nenhum candidato a diácono apurado.
-                  </div>
-                ) : (
-                  resDiac.map((r) => (
-                    <div
-                      key={r.id}
-                      className="grid grid-cols-[1fr_90px_110px_120px] items-center text-sm py-2.5"
-                    >
-                      <span className="font-semibold text-[#15201A]">{r.name}</span>
-                      <span className="text-right tabular-nums font-medium text-[#15201A]">
-                        {r.votes}
-                      </span>
-                      <span className="text-right tabular-nums text-[#5A675F]">{r.pct}</span>
-                      <span
-                        className="justify-self-end px-2.5 py-0.5 rounded-md text-xs font-bold"
-                        style={{ backgroundColor: r.sitBg, color: r.sitColor }}
-                      >
-                        {r.sit}
-                      </span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* Presbiterato Table */}
-            <div className="flex flex-col gap-2.5">
-              <div className="flex justify-between items-baseline">
-                <span className="font-serif text-xl font-semibold text-[#15201A]">Presbiterato</span>
-                <span className="text-[13px] text-[#6B776F] font-medium">{vagasPresb} vagas</span>
-              </div>
-              <div className="grid grid-cols-[1fr_90px_110px_120px] text-xs font-bold text-[#6B776F] py-2 border-b border-[#CBD5CE]">
-                <span>Candidato</span>
-                <span className="text-right">Votos</span>
-                <span className="text-right">% presentes</span>
-                <span className="text-right">Situação</span>
-              </div>
-              <div className="flex flex-col divide-y divide-[#EEF1EE]">
-                {resPresb.length === 0 ? (
-                  <div className="py-4 text-center text-xs text-[#6B776F]">
-                    Nenhum candidato a presbítero apurado.
-                  </div>
-                ) : (
-                  resPresb.map((r) => (
-                    <div
-                      key={r.id}
-                      className="grid grid-cols-[1fr_90px_110px_120px] items-center text-sm py-2.5"
-                    >
-                      <span className="font-semibold text-[#15201A]">{r.name}</span>
-                      <span className="text-right tabular-nums font-medium text-[#15201A]">
-                        {r.votes}
-                      </span>
-                      <span className="text-right tabular-nums text-[#5A675F]">{r.pct}</span>
-                      <span
-                        className="justify-self-end px-2.5 py-0.5 rounded-md text-xs font-bold"
-                        style={{ backgroundColor: r.sitBg, color: r.sitColor }}
-                      >
-                        {r.sit}
-                      </span>
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-
-            {/* Secret ballot compliance disclaimer */}
-            <div className="text-[13px] leading-[1.6] text-[#4A574F] p-3.5 px-4 bg-[#F4F7F5] rounded-lg">
-              O sistema registra a lista de presença, conferida com o livro de atas, e a contagem de
-              votos em registros separados. Nenhum voto é vinculado ao nome ou telefone do membro.
-            </div>
-
-            {/* Formal Signatures */}
-            <div className="grid grid-cols-2 gap-x-14 gap-y-10 pt-6">
-              <div className="flex flex-col gap-1.5 pt-9 border-b border-[#15201A]">
-                <div className="text-[13px] text-[#4A574F]">Presidente da Assembleia</div>
-              </div>
-              <div className="flex flex-col gap-1.5 pt-9 border-b border-[#15201A]">
-                <div className="text-[13px] text-[#4A574F]">Secretário</div>
-              </div>
-              <div className="flex flex-col gap-1.5 pt-9 border-b border-[#15201A]">
-                <div className="text-[13px] text-[#4A574F]">Escrutinador</div>
-              </div>
-              <div className="flex flex-col gap-1.5 pt-9 border-b border-[#15201A]">
-                <div className="text-[13px] text-[#4A574F]">Escrutinador</div>
-              </div>
+  // Embedded view (e.g. inside /canvas preview)
+  return (
+    <div className="flex flex-col gap-3.5 w-full max-w-[1440px] mx-auto">
+      <div className="text-sm font-semibold text-[#4A574F] no-print">
+        06 · Relatório executivo para a mesa
+      </div>
+      <div className="w-full rounded-2xl overflow-hidden flex flex-col md:flex-row bg-[#F6F8F5] shadow-xl border border-[#DCE3DE]">
+        <div className="w-full md:w-[248px] shrink-0 bg-[#073D24] text-white p-6 flex flex-col gap-6 no-print">
+          <div className="flex items-center gap-3">
+            <img
+              src="/assets/ipst_logo.jpg"
+              alt="IPST"
+              className="w-12 h-12 rounded-xl object-cover block border border-white/10"
+            />
+            <div className="flex flex-col gap-0.5">
+              <span className="text-[15px] font-bold">Eleição 2026</span>
+              <span className="text-xs text-[#A9CDB6]">IP Serra Talhada</span>
             </div>
           </div>
+          <div className="flex flex-col gap-1 text-sm text-[#CFE3D6]">
+            <div>Candidatos e vagas</div>
+            <div>Conferência de ata</div>
+            <div>Apresentação</div>
+            <div className="font-semibold text-white">Relatório executivo</div>
+          </div>
+        </div>
+        <div className="flex-1 p-6 sm:p-8">
+          {contentPaper}
         </div>
       </div>
     </div>

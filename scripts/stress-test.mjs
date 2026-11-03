@@ -95,10 +95,25 @@ async function run() {
   console.log('\n------------------------------------------------------');
   console.log('🏆 APURAÇÃO FINAL DOS VOTOS');
   console.log('------------------------------------------------------');
-  const sortedTally = Object.entries(data.tally).sort((a, b) => b[1] - a[1]);
-  sortedTally.forEach(([id, votes]) => {
-    const role = id.startsWith('d') ? 'Diaconato' : 'Presbiterato';
-    console.log(`- [${role}] Candidato ${id.padEnd(4)}: ${String(votes).padStart(4)} votos`);
+  const sortedDiac = Object.entries(data.tally)
+    .filter(([id]) => id.startsWith('d'))
+    .sort((a, b) => b[1] - a[1]);
+  const sortedPresb = Object.entries(data.tally)
+    .filter(([id]) => id.startsWith('p'))
+    .sort((a, b) => b[1] - a[1]);
+
+  console.log(`\n📌 Diaconato (${data.scenario.vagasDiac} vagas):`);
+  sortedDiac.forEach(([id, votes], idx) => {
+    const isElected = idx < data.scenario.vagasDiac && votes > 0;
+    const tag = isElected ? ' 🌟 ELEITO' : '';
+    console.log(`  #${idx + 1} Candidato ${id.padEnd(4)}: ${String(votes).padStart(4)} votos${tag}`);
+  });
+
+  console.log(`\n📌 Presbiterato (${data.scenario.vagasPresb} vagas):`);
+  sortedPresb.forEach(([id, votes], idx) => {
+    const isElected = idx < data.scenario.vagasPresb && votes > 0;
+    const tag = isElected ? ' 🌟 ELEITO' : '';
+    console.log(`  #${idx + 1} Candidato ${id.padEnd(4)}: ${String(votes).padStart(4)} votos${tag}`);
   });
 
   console.log('\n======================================================');

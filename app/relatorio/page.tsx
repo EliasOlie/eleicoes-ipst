@@ -5,7 +5,7 @@ import { RelatorioExecutivoScreen } from '@/components/screens/relatorio-executi
 
 export default function RelatorioPage() {
   return (
-    <main className="min-h-screen bg-[#E9ECE8] py-6 sm:py-10 px-4 flex flex-col items-center justify-center print:bg-white print:p-0">
+    <main className="min-h-screen w-full bg-[#F6F8F5] print:bg-white m-0 p-0 overflow-x-hidden">
       <RelatorioExecutivoScreen standalone={true} />
     </main>
   );
