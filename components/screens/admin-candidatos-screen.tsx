@@ -19,6 +19,8 @@ export function AdminCandidatosScreen({ standalone = false }: { standalone?: boo
     statusLabel,
     statusColor,
     statusBg,
+    adminUser,
+    logoutAdmin,
   } = useElection();
 
   const [newDiacName, setNewDiacName] = useState('');
@@ -86,10 +88,29 @@ export function AdminCandidatosScreen({ standalone = false }: { standalone?: boo
             </Link>
           </div>
 
-          <div className="mt-auto text-xs leading-[1.5] text-[#A9CDB6] pt-6 border-t border-white/10">
-            Conselho da Igreja
-            <br />
-            Acesso administrativo
+          <div className="mt-auto text-xs leading-[1.5] text-[#A9CDB6] pt-6 border-t border-white/10 flex flex-col gap-2">
+            <div>
+              <span className="font-semibold text-white">
+                {adminUser ? adminUser.name : 'Conselho da Igreja'}
+              </span>
+              <br />
+              {adminUser ? 'Acesso autenticado' : 'Acesso administrativo'}
+            </div>
+            {adminUser ? (
+              <button
+                onClick={logoutAdmin}
+                className="text-left text-xs text-[#9FD3B1] hover:underline cursor-pointer"
+              >
+                Encerrar sessão
+              </button>
+            ) : (
+              <Link
+                href="/admin/login"
+                className="text-left text-xs text-[#9FD3B1] hover:underline cursor-pointer"
+              >
+                Entrar com senha
+              </Link>
+            )}
           </div>
         </div>
 

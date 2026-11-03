@@ -18,6 +18,7 @@ export function VoterBallotScreen({ standalone = false }: { standalone?: boolean
     confirmVote,
     resetBallot,
     receipt,
+    votingError,
     diac,
     presb,
     vd,
@@ -200,6 +201,12 @@ export function VoterBallotScreen({ standalone = false }: { standalone?: boolean
               O voto é gravado sem qualquer vínculo com seu nome ou telefone. Depois de confirmado,
               não pode ser alterado.
             </div>
+
+            {votingError && (
+              <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-semibold animate-in fade-in">
+                {votingError}
+              </div>
+            )}
 
             <div className="mt-auto flex flex-col gap-2.5 pt-2">
               <button

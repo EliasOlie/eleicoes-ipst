@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { useElection } from '@/context/election-context';
+import Link from 'next/link';
 
 export function MesaAtaScreen({ standalone = false }: { standalone?: boolean }) {
   const {
@@ -19,6 +20,7 @@ export function MesaAtaScreen({ standalone = false }: { standalone?: boolean }) 
     votingOpen,
     published,
     publishedAt,
+    isAdminAuthenticated,
   } = useElection();
 
   const publishLabel = votingOpen ? 'Reenviar quórum' : 'Aprovar quórum e liberar votação';
@@ -38,9 +40,23 @@ export function MesaAtaScreen({ standalone = false }: { standalone?: boolean }) 
       }`}>
         {/* Header */}
         <div className="bg-[#073D24] text-white p-5 pt-12 pb-4.5 flex flex-col gap-3.5 shrink-0">
-          <div className="flex flex-col gap-0.5">
-            <div className="text-[13px] text-[#CFE3D6]">Mesa · Secretário</div>
-            <div className="font-serif text-2xl font-semibold">Conferência de ata</div>
+          <div className="flex justify-between items-start">
+            <div className="flex flex-col gap-0.5">
+              <div className="text-[13px] text-[#CFE3D6]">Mesa · Secretário</div>
+              <div className="font-serif text-2xl font-semibold">Conferência de ata</div>
+            </div>
+            {isAdminAuthenticated ? (
+              <span className="text-[11px] bg-white/10 px-2.5 py-1 rounded-md text-[#9FD3B1] font-semibold border border-white/10">
+                Sessão Ativa ✓
+              </span>
+            ) : (
+              <Link
+                href="/admin/login"
+                className="text-[11px] bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-md text-[#CFE3D6] hover:text-white font-medium transition-colors border border-white/10"
+              >
+                Entrar
+              </Link>
+            )}
           </div>
           <div className="grid grid-cols-3 gap-2">
             <div className="p-2.5 rounded-xl bg-white/10 flex flex-col gap-0.5 backdrop-blur-xs">
