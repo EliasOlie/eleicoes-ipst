@@ -12,11 +12,11 @@ export interface BallotPdfOptions {
   candidates: BallotCandidate[];
   vagasDiac: number;
   vagasPresb: number;
-  mode?: '2-up' | '4-up';
+  mode?: string;
 }
 
 export async function generateBallotPdfBuffer(options: BallotPdfOptions): Promise<Uint8Array> {
-  const { candidates, vagasDiac, vagasPresb, mode = '2-up' } = options;
+  const { candidates, vagasDiac, vagasPresb } = options;
 
   const diacList = candidates.filter((c) => c.role === 'diac');
   const presbList = candidates.filter((c) => c.role === 'presb');
@@ -28,10 +28,9 @@ export async function generateBallotPdfBuffer(options: BallotPdfOptions): Promis
 
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const fontOblique = await pdfDoc.embedFont(StandardFonts.HelveticaOblique);
 
   // Embed logo
-  let logoImage = null;
+  let logoImage: any = null;
   try {
     const logoPath = path.join(process.cwd(), 'public/assets/ipst_logo.jpg');
     const logoBytes = await fs.readFile(logoPath);
@@ -44,272 +43,267 @@ export async function generateBallotPdfBuffer(options: BallotPdfOptions): Promis
   const primaryGreen = rgb(0.039, 0.361, 0.212); // #0A5C36
   const textDark = rgb(0.082, 0.125, 0.102); // #15201A
   const textMuted = rgb(0.29, 0.34, 0.31); // #4A574F
-  const borderColor = rgb(0.796, 0.835, 0.808); // #CBD5CE
-  const lightBg = rgb(0.965, 0.973, 0.961); // #F6F8F5
+  const borderColor = rgb(0.78, 0.82, 0.79); // #C7D1C9
+  const cutLineColor = rgb(0.55, 0.60, 0.57); // Discrete cut line
 
-  function drawScissors(x: number, y: number) {
-    page.drawCircle({ x: x - 4, y: y, size: 2.5, borderWidth: 1, borderColor: rgb(0.3, 0.35, 0.32) });
-    page.drawCircle({ x: x + 4, y: y, size: 2.5, borderWidth: 1, borderColor: rgb(0.3, 0.35, 0.32) });
-    page.drawLine({ start: { x: x - 3, y: y }, end: { x: x + 5, y: y + 8 }, thickness: 1, color: rgb(0.3, 0.35, 0.32) });
-    page.drawLine({ start: { x: x + 3, y: y }, end: { x: x - 5, y: y + 8 }, thickness: 1, color: rgb(0.3, 0.35, 0.32) });
-  }
+  // Grid: 4 columns x 2 rows = 8 ballots per sheet
+  const COLS = 4;
+  const ROWS = 2;
+  const cellW = width / COLS; // 210.47 pt (~74.2 mm)
+  const cellH = height / ROWS; // 297.64 pt (~105 mm)
 
-  if (mode === '2-up') {
-    // 2 Ballots Side by Side (A5 format on A4 landscape)
-    const halfW = width / 2;
+  function drawSingleBallot(originX: number, originY: number, bWidth: number, bHeight: number) {
+    const margin = 5;
+    const boxX = originX + margin;
+    const boxY = originY + margin;
+    const boxW = bWidth - margin * 2;
+    const boxH = bHeight - margin * 2;
 
-    const drawSingleBallot = (originX: number, originY: number, bWidth: number, bHeight: number) => {
-      const padding = 24;
-      const innerX = originX + padding;
-      const innerW = bWidth - padding * 2;
-
-      // Outer border
-      page.drawRectangle({
-        x: originX + 10,
-        y: originY + 10,
-        width: bWidth - 20,
-        height: bHeight - 20,
-        borderColor: borderColor,
-        borderWidth: 1.5,
-        color: rgb(1, 1, 1),
-      });
-
-      // Top decorative bar
-      page.drawRectangle({
-        x: originX + 10,
-        y: originY + bHeight - 16,
-        width: bWidth - 20,
-        height: 6,
-        color: primaryDark,
-      });
-
-      let curY = originY + bHeight - 34;
-
-      // Logo & Header
-      if (logoImage) {
-        page.drawImage(logoImage, {
-          x: innerX,
-          y: curY - 32,
-          width: 32,
-          height: 32,
-        });
-      }
-
-      const headerTextX = logoImage ? innerX + 40 : innerX;
-
-      page.drawText('IGREJA PRESBITERIANA DE SERRA TALHADA', {
-        x: headerTextX,
-        y: curY - 6,
-        size: 9.5,
-        font: fontBold,
-        color: primaryGreen,
-      });
-
-      page.drawText('Assembleia Geral Extraordinária para Eleição de Oficiais', {
-        x: headerTextX,
-        y: curY - 18,
-        size: 9,
-        font: fontBold,
-        color: textDark,
-      });
-
-      page.drawText('Data: 08/11/2026   ·   CÉDULA OFICIAL DE VOTAÇÃO', {
-        x: headerTextX,
-        y: curY - 30,
-        size: 7.5,
-        font: fontRegular,
-        color: textMuted,
-      });
-
-      curY -= 48;
-
-      // Instruction Box
-      page.drawRectangle({
-        x: innerX,
-        y: curY - 20,
-        width: innerW,
-        height: 22,
-        color: lightBg,
-        borderColor: borderColor,
-        borderWidth: 0.8,
-      });
-
-      page.drawText('INSTRUÇÃO: Assinale com um X seus candidatos. Voto em branco: deixe sem assinalar.', {
-        x: innerX + 8,
-        y: curY - 14,
-        size: 7.2,
-        font: fontBold,
-        color: primaryDark,
-      });
-
-      curY -= 32;
-
-      // Split candidates in 2 columns: Diaconato (left) & Presbiterato (right)
-      const colGap = 16;
-      const colW = (innerW - colGap) / 2;
-
-      // Coluna 1: Diaconato
-      const col1X = innerX;
-      let col1Y = curY;
-
-      page.drawRectangle({
-        x: col1X,
-        y: col1Y - 18,
-        width: colW,
-        height: 18,
-        color: primaryGreen,
-      });
-
-      page.drawText(`DIACONATO (Vote em até ${vagasDiac})`, {
-        x: col1X + 6,
-        y: col1Y - 13,
-        size: 8,
-        font: fontBold,
-        color: rgb(1, 1, 1),
-      });
-
-      col1Y -= 26;
-
-      diacList.forEach((c) => {
-        page.drawRectangle({
-          x: col1X + 4,
-          y: col1Y - 15,
-          width: 15,
-          height: 15,
-          borderWidth: 1.5,
-          borderColor: textDark,
-          color: rgb(1, 1, 1),
-        });
-
-        const candName = c.name.length > 25 ? c.name.substring(0, 24) + '...' : c.name;
-        page.drawText(candName, {
-          x: col1X + 25,
-          y: col1Y - 12,
-          size: 9.5,
-          font: fontBold,
-          color: textDark,
-        });
-
-        col1Y -= 24;
-      });
-
-      // Coluna 2: Presbiterato
-      const col2X = innerX + colW + colGap;
-      let col2Y = curY;
-
-      page.drawRectangle({
-        x: col2X,
-        y: col2Y - 18,
-        width: colW,
-        height: 18,
-        color: primaryDark,
-      });
-
-      page.drawText(`PRESBITERATO (Vote em até ${vagasPresb})`, {
-        x: col2X + 6,
-        y: col2Y - 13,
-        size: 8,
-        font: fontBold,
-        color: rgb(1, 1, 1),
-      });
-
-      col2Y -= 26;
-
-      presbList.forEach((c) => {
-        page.drawRectangle({
-          x: col2X + 4,
-          y: col2Y - 15,
-          width: 15,
-          height: 15,
-          borderWidth: 1.5,
-          borderColor: textDark,
-          color: rgb(1, 1, 1),
-        });
-
-        const candName = c.name.length > 25 ? c.name.substring(0, 24) + '...' : c.name;
-        page.drawText(candName, {
-          x: col2X + 25,
-          y: col2Y - 12,
-          size: 9.5,
-          font: fontBold,
-          color: textDark,
-        });
-
-        col2Y -= 24;
-      });
-
-      // Bottom Validation Block (Rubrica da Mesa)
-      const bottomY = originY + 20;
-
-      page.drawLine({
-        start: { x: innerX, y: bottomY + 36 },
-        end: { x: innerX + innerW, y: bottomY + 36 },
-        color: borderColor,
-        thickness: 1,
-      });
-
-      page.drawText('Rubrica da Mesa Eleitoral / Escrutinadora:', {
-        x: innerX,
-        y: bottomY + 22,
-        size: 7.5,
-        font: fontBold,
-        color: textMuted,
-      });
-
-      page.drawLine({
-        start: { x: innerX + 175, y: bottomY + 22 },
-        end: { x: innerX + innerW - 60, y: bottomY + 22 },
-        color: textDark,
-        thickness: 1,
-      });
-
-      page.drawText('Voto Secreto', {
-        x: innerX + innerW - 52,
-        y: bottomY + 22,
-        size: 7,
-        font: fontOblique,
-        color: primaryGreen,
-      });
-
-      page.drawText('Cédula válida exclusivamente com a rubrica oficial de ao menos um membro da Mesa Escrutinadora.', {
-        x: innerX,
-        y: bottomY + 8,
-        size: 6.5,
-        font: fontRegular,
-        color: rgb(0.45, 0.5, 0.47),
-      });
-    };
-
-    drawSingleBallot(0, 0, halfW, height);
-    drawSingleBallot(halfW, 0, halfW, height);
-
-    // Center Cut Guide Line (Dashed)
-    const cutX = halfW;
-    const dashLength = 8;
-    const gapLength = 6;
-    let lineY = 15;
-
-    while (lineY < height - 15) {
-      page.drawLine({
-        start: { x: cutX, y: lineY },
-        end: { x: cutX, y: Math.min(lineY + dashLength, height - 15) },
-        color: rgb(0.5, 0.55, 0.52),
-        thickness: 1,
-      });
-      lineY += dashLength + gapLength;
-    }
-
-    drawScissors(cutX, height - 25);
-
-    page.drawText('LINHA DE CORTE (RECORTE AQUI)', {
-      x: cutX - 52,
-      y: height / 2 + 10,
-      size: 6.5,
-      font: fontBold,
-      color: rgb(0.4, 0.45, 0.42),
+    // Card border
+    page.drawRectangle({
+      x: boxX,
+      y: boxY,
+      width: boxW,
+      height: boxH,
+      borderColor: borderColor,
+      borderWidth: 1,
+      color: rgb(1, 1, 1),
     });
 
-    drawScissors(cutX, 20);
+    // Top decorative bar
+    page.drawRectangle({
+      x: boxX,
+      y: boxY + boxH - 4,
+      width: boxW,
+      height: 4,
+      color: primaryDark,
+    });
+
+    let curY = boxY + boxH - 12;
+    const padX = boxX + 8;
+    const innerW = boxW - 16;
+
+    // Header with Logo
+    if (logoImage) {
+      page.drawImage(logoImage, {
+        x: padX,
+        y: curY - 22,
+        width: 22,
+        height: 22,
+      });
+    }
+
+    const headerX = logoImage ? padX + 27 : padX;
+
+    page.drawText('IP SERRA TALHADA', {
+      x: headerX,
+      y: curY - 4,
+      size: 7.5,
+      font: fontBold,
+      color: primaryGreen,
+    });
+
+    page.drawText('Eleição de Oficiais · 08/11/2026', {
+      x: headerX,
+      y: curY - 13,
+      size: 6.5,
+      font: fontBold,
+      color: textDark,
+    });
+
+    page.drawText('Cédula Oficial de Votação', {
+      x: headerX,
+      y: curY - 21,
+      size: 5.5,
+      font: fontRegular,
+      color: textMuted,
+    });
+
+    curY -= 28;
+
+    // Instruction Banner
+    page.drawRectangle({
+      x: padX,
+      y: curY - 11,
+      width: innerW,
+      height: 12,
+      color: rgb(0.96, 0.97, 0.96),
+      borderColor: borderColor,
+      borderWidth: 0.5,
+    });
+
+    page.drawText('Assinale [X] seus candidatos. Em branco: não assinale.', {
+      x: padX + 4,
+      y: curY - 7.5,
+      size: 5.2,
+      font: fontBold,
+      color: primaryDark,
+    });
+
+    curY -= 17;
+
+    // Two Columns for Candidates inside Ballot
+    const colGap = 8;
+    const colW = (innerW - colGap) / 2;
+
+    // --- Coluna 1: Diaconato ---
+    const col1X = padX;
+    let col1Y = curY;
+
+    // Header Diaconato
+    page.drawRectangle({
+      x: col1X,
+      y: col1Y - 12,
+      width: colW,
+      height: 12,
+      color: primaryGreen,
+    });
+
+    page.drawText(`DIACONATO (Até ${vagasDiac})`, {
+      x: col1X + 4,
+      y: col1Y - 8.5,
+      size: 5.8,
+      font: fontBold,
+      color: rgb(1, 1, 1),
+    });
+
+    col1Y -= 17;
+
+    diacList.forEach((c) => {
+      // Checkbox
+      page.drawRectangle({
+        x: col1X + 2,
+        y: col1Y - 9,
+        width: 9,
+        height: 9,
+        borderWidth: 1.2,
+        borderColor: textDark,
+        color: rgb(1, 1, 1),
+      });
+
+      // Name (truncate if too long for column)
+      const maxLen = 16;
+      const candName = c.name.length > maxLen ? c.name.substring(0, maxLen - 1) + '…' : c.name;
+
+      page.drawText(candName, {
+        x: col1X + 15,
+        y: col1Y - 7,
+        size: 6.2,
+        font: fontBold,
+        color: textDark,
+      });
+
+      col1Y -= 15;
+    });
+
+    // --- Coluna 2: Presbiterato ---
+    const col2X = padX + colW + colGap;
+    let col2Y = curY;
+
+    // Header Presbiterato
+    page.drawRectangle({
+      x: col2X,
+      y: col2Y - 12,
+      width: colW,
+      height: 12,
+      color: primaryDark,
+    });
+
+    page.drawText(`PRESBITERATO (Até ${vagasPresb})`, {
+      x: col2X + 4,
+      y: col2Y - 8.5,
+      size: 5.8,
+      font: fontBold,
+      color: rgb(1, 1, 1),
+    });
+
+    col2Y -= 17;
+
+    presbList.forEach((c) => {
+      // Checkbox
+      page.drawRectangle({
+        x: col2X + 2,
+        y: col2Y - 9,
+        width: 9,
+        height: 9,
+        borderWidth: 1.2,
+        borderColor: textDark,
+        color: rgb(1, 1, 1),
+      });
+
+      // Name
+      const maxLen = 16;
+      const candName = c.name.length > maxLen ? c.name.substring(0, maxLen - 1) + '…' : c.name;
+
+      page.drawText(candName, {
+        x: col2X + 15,
+        y: col2Y - 7,
+        size: 6.2,
+        font: fontBold,
+        color: textDark,
+      });
+
+      col2Y -= 15;
+    });
+
+    // Sub-footer
+    page.drawLine({
+      start: { x: padX, y: boxY + 12 },
+      end: { x: padX + innerW, y: boxY + 12 },
+      color: borderColor,
+      thickness: 0.6,
+    });
+
+    page.drawText('Cédula Oficial Presencial · Votação Secreta (CI/IPB)', {
+      x: padX + 2,
+      y: boxY + 4,
+      size: 4.8,
+      font: fontRegular,
+      color: textMuted,
+    });
+  }
+
+  // Draw 8 ballots (4 columns x 2 rows)
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const oX = c * cellW;
+      // In PDF coordinates, (0,0) is bottom-left
+      // row 0 is top (originY = cellH), row 1 is bottom (originY = 0)
+      const oY = (ROWS - 1 - r) * cellH;
+      drawSingleBallot(oX, oY, cellW, cellH);
+    }
+  }
+
+  // Draw Cutting Lines (Discrete dashed lines between cells)
+  const dashLength = 4;
+  const gapLength = 4;
+
+  // 3 Vertical cutting lines (at c = 1, 2, 3)
+  for (let c = 1; c < COLS; c++) {
+    const cutX = c * cellW;
+    let y = 0;
+    while (y < height) {
+      page.drawLine({
+        start: { x: cutX, y },
+        end: { x: cutX, y: Math.min(y + dashLength, height) },
+        color: cutLineColor,
+        thickness: 0.75,
+      });
+      y += dashLength + gapLength;
+    }
+  }
+
+  // 1 Horizontal cutting line (at r = 1)
+  const cutY = cellH;
+  let x = 0;
+  while (x < width) {
+    page.drawLine({
+      start: { x, y: cutY },
+      end: { x: Math.min(x + dashLength, width), y: cutY },
+      color: cutLineColor,
+      thickness: 0.75,
+    });
+    x += dashLength + gapLength;
   }
 
   return await pdfDoc.save();
