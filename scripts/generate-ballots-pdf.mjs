@@ -8,7 +8,7 @@ const connectionString =
   'postgresql://app_ipst_admin:8xYVEXYMs6WxaDXv0LVe4Wvq@i1-db.eliasolie.com.br:6432/app_ipst?sslmode=disable';
 
 async function generate() {
-  console.log('Generating A4 Landscape Election Ballots PDF (8 per sheet)...');
+  console.log('Generating A4 Landscape Election Ballots PDF (12 per sheet)...');
 
   const sql = postgres(connectionString);
   let candidates = [];

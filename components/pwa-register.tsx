@@ -3,33 +3,41 @@
 import { useEffect, useState } from 'react';
 import { Download, X } from 'lucide-react';
 
+const STORAGE_KEY = 'ipst_pwa_prompt_shown_v1';
+
 export function PwaRegister() {
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [showBanner, setShowBanner] = useState(false);
 
   useEffect(() => {
-    // Register Service Worker
+    // 1. Register Service Worker
     if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
       window.addEventListener('load', () => {
         navigator.serviceWorker
           .register('/sw.js')
-          .then((reg) => {
-            console.log('PWA Service Worker registered:', reg.scope);
-          })
           .catch((err) => {
             console.warn('PWA Service Worker registration failed:', err);
           });
       });
     }
 
-    // Listen for install prompt
+    // 2. Listen for install prompt - show at most ONCE
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
       setInstallPrompt(e);
-      // Show install banner only if not standalone
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-      if (!isStandalone) {
-        setShowBanner(true);
+
+      try {
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+        const alreadyShown = localStorage.getItem(STORAGE_KEY);
+
+        // Only show if not installed and never shown before
+        if (!isStandalone && !alreadyShown) {
+          setShowBanner(true);
+          // Mark as shown so it never appears again across sessions
+          localStorage.setItem(STORAGE_KEY, 'true');
+        }
+      } catch {
+        // Fallback if localStorage is disabled
       }
     };
 
@@ -39,18 +47,27 @@ export function PwaRegister() {
 
   const handleInstallClick = async () => {
     if (!installPrompt) return;
+    try {
+      localStorage.setItem(STORAGE_KEY, 'true');
+    } catch {}
+
     installPrompt.prompt();
-    const { outcome } = await installPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setShowBanner(false);
-    }
+    await installPrompt.userChoice.catch(() => {});
+    setShowBanner(false);
     setInstallPrompt(null);
+  };
+
+  const handleDismiss = () => {
+    try {
+      localStorage.setItem(STORAGE_KEY, 'true');
+    } catch {}
+    setShowBanner(false);
   };
 
   if (!showBanner) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-4 md:w-96 bg-[#073D24] text-white p-4 rounded-2xl shadow-2xl border border-[#9FD3B1]/20 flex items-center justify-between gap-3 animate-in fade-in slide-in-from-bottom duration-300">
+    <div className="fixed bottom-4 left-4 right-4 z-50 md:left-auto md:right-4 md:w-96 bg-[#073D24] text-white p-4 rounded-2xl shadow-2xl border border-[#9FD3B1]/20 flex items-center justify-between gap-3 animate-in fade-in slide-in-from-bottom duration-300 no-print">
       <div className="flex items-center gap-3">
         <img src="/assets/ipst_logo.jpg" alt="IPST" className="w-10 h-10 rounded-xl object-cover" />
         <div className="flex flex-col">
@@ -67,8 +84,8 @@ export function PwaRegister() {
           Instalar
         </button>
         <button
-          onClick={() => setShowBanner(false)}
-          className="text-white/60 hover:text-white p-1 rounded-lg"
+          onClick={handleDismiss}
+          className="text-white/60 hover:text-white p-1 rounded-lg cursor-pointer"
           aria-label="Fechar"
         >
           <X size={16} />
