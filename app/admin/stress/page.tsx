@@ -92,6 +92,13 @@ export default function AdminStressPage() {
             >
               Relatório executivo
             </Link>
+            <Link
+              href="/cedula"
+              className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/10 transition-colors flex items-center justify-between"
+            >
+              <span>Cédulas para impressão</span>
+              <span className="text-[10px] bg-white/15 px-1.5 py-0.5 rounded text-white font-mono">PDF</span>
+            </Link>
             <div className="p-3 px-3.5 rounded-xl bg-white/15 text-sm font-semibold flex items-center justify-between text-white shadow-xs">
               <span>Stress Test (Bots)</span>
               <Zap size={14} className="text-amber-400" />

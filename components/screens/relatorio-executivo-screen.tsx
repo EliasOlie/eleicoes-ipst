@@ -285,6 +285,13 @@ export function RelatorioExecutivoScreen({ standalone = false }: { standalone?: 
                 Relatório executivo
               </div>
               <Link
+                href="/cedula"
+                className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/10 transition-colors flex items-center justify-between"
+              >
+                <span>Cédulas para impressão</span>
+                <span className="text-[10px] bg-white/15 px-1.5 py-0.5 rounded text-white font-mono">PDF</span>
+              </Link>
+              <Link
                 href="/admin/stress"
                 className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/10 transition-colors"
               >

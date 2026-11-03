@@ -9,6 +9,7 @@
     "lint": "eslint",
     "db:init": "node db/init.mjs",
     "db:clean": "node db/clean.mjs",
+    "pdf:cedula": "node scripts/generate-ballots-pdf.mjs",
     "test:stress": "node scripts/stress-test.mjs"
   },
   "dependencies": {
@@ -16,6 +17,7 @@
     "ioredis": "^6.0.0",
     "lucide-react": "^1.66.0",
     "next": "16.4.4",
+    "pdf-lib": "^1.17.1",
     "postgres": "^4.0.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
