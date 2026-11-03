@@ -17,7 +17,10 @@ async function clean() {
     UPDATE election_config
     SET voting_open = FALSE,
         published_quorum = 0,
-        published_at = ''
+        published_at = '',
+        vagas_diac = 3,
+        vagas_presb = 2,
+        total_comungantes = 300
     WHERE id = 1;
   `;
   console.log('✓ Reset election_config to initial unstarted state');
