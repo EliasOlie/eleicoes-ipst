@@ -105,39 +105,45 @@ export function ProjetorScreen({ standalone = false }: { standalone?: boolean })
             </div>
 
             <div className="flex flex-col gap-4 overflow-y-auto pr-1">
-              {resDiac.map((r) => (
-                <div key={r.id} className="flex flex-col gap-1.5">
-                  <div className="flex justify-between items-baseline gap-3">
-                    <span className="text-base md:text-xl font-semibold flex items-center gap-2.5">
-                      <span>{r.name}</span>
-                      {r.elected && (
-                        <span className="text-[11px] md:text-xs font-bold tracking-[.08em] px-2 py-0.5 rounded-md bg-[#E8F3EC] text-[#073D24] shadow-xs">
-                          ELEITO
-                        </span>
-                      )}
-                    </span>
-                    <span className="text-base md:text-xl font-bold tabular-nums text-[#9FD3B1]">
-                      {r.votes}
-                    </span>
-                  </div>
-                  {/* Progress bar */}
-                  <div className="h-2.5 rounded-full bg-white/12 relative overflow-hidden">
-                    <div
-                      className="absolute left-0 top-0 bottom-0 rounded-full transition-all duration-500 ease-out"
-                      style={{
-                        width: r.width,
-                        backgroundColor: r.bar,
-                      }}
-                    ></div>
-                    {/* Majority indicator line */}
-                    <div
-                      className="absolute top-0 bottom-0 w-0.5 bg-white opacity-70"
-                      style={{ left: majPct }}
-                      title="Linha da maioria absoluta"
-                    ></div>
-                  </div>
+              {resDiac.length === 0 ? (
+                <div className="py-12 text-center text-sm text-[#A9CDB6] bg-white/5 rounded-xl">
+                  Aguardando cadastro de candidatos ao diaconato...
                 </div>
-              ))}
+              ) : (
+                resDiac.map((r) => (
+                  <div key={r.id} className="flex flex-col gap-1.5">
+                    <div className="flex justify-between items-baseline gap-3">
+                      <span className="text-base md:text-xl font-semibold flex items-center gap-2.5">
+                        <span>{r.name}</span>
+                        {r.elected && (
+                          <span className="text-[11px] md:text-xs font-bold tracking-[.08em] px-2 py-0.5 rounded-md bg-[#E8F3EC] text-[#073D24] shadow-xs">
+                            ELEITO
+                          </span>
+                        )}
+                      </span>
+                      <span className="text-base md:text-xl font-bold tabular-nums text-[#9FD3B1]">
+                        {r.votes}
+                      </span>
+                    </div>
+                    {/* Progress bar */}
+                    <div className="h-2.5 rounded-full bg-white/12 relative overflow-hidden">
+                      <div
+                        className="absolute left-0 top-0 bottom-0 rounded-full transition-all duration-500 ease-out"
+                        style={{
+                          width: r.width,
+                          backgroundColor: r.bar,
+                        }}
+                      ></div>
+                      {/* Majority indicator line */}
+                      <div
+                        className="absolute top-0 bottom-0 w-0.5 bg-white opacity-70"
+                        style={{ left: majPct }}
+                        title="Linha da maioria absoluta"
+                      ></div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -153,39 +159,45 @@ export function ProjetorScreen({ standalone = false }: { standalone?: boolean })
             </div>
 
             <div className="flex flex-col gap-4 overflow-y-auto pr-1">
-              {resPresb.map((r) => (
-                <div key={r.id} className="flex flex-col gap-1.5">
-                  <div className="flex justify-between items-baseline gap-3">
-                    <span className="text-base md:text-xl font-semibold flex items-center gap-2.5">
-                      <span>{r.name}</span>
-                      {r.elected && (
-                        <span className="text-[11px] md:text-xs font-bold tracking-[.08em] px-2 py-0.5 rounded-md bg-[#E8F3EC] text-[#073D24] shadow-xs">
-                          ELEITO
-                        </span>
-                      )}
-                    </span>
-                    <span className="text-base md:text-xl font-bold tabular-nums text-[#9FD3B1]">
-                      {r.votes}
-                    </span>
-                  </div>
-                  {/* Progress bar */}
-                  <div className="h-2.5 rounded-full bg-white/12 relative overflow-hidden">
-                    <div
-                      className="absolute left-0 top-0 bottom-0 rounded-full transition-all duration-500 ease-out"
-                      style={{
-                        width: r.width,
-                        backgroundColor: r.bar,
-                      }}
-                    ></div>
-                    {/* Majority indicator line */}
-                    <div
-                      className="absolute top-0 bottom-0 w-0.5 bg-white opacity-70"
-                      style={{ left: majPct }}
-                      title="Linha da maioria absoluta"
-                    ></div>
-                  </div>
+              {resPresb.length === 0 ? (
+                <div className="py-12 text-center text-sm text-[#A9CDB6] bg-white/5 rounded-xl">
+                  Aguardando cadastro de candidatos ao presbiterato...
                 </div>
-              ))}
+              ) : (
+                resPresb.map((r) => (
+                  <div key={r.id} className="flex flex-col gap-1.5">
+                    <div className="flex justify-between items-baseline gap-3">
+                      <span className="text-base md:text-xl font-semibold flex items-center gap-2.5">
+                        <span>{r.name}</span>
+                        {r.elected && (
+                          <span className="text-[11px] md:text-xs font-bold tracking-[.08em] px-2 py-0.5 rounded-md bg-[#E8F3EC] text-[#073D24] shadow-xs">
+                            ELEITO
+                          </span>
+                        )}
+                      </span>
+                      <span className="text-base md:text-xl font-bold tabular-nums text-[#9FD3B1]">
+                        {r.votes}
+                      </span>
+                    </div>
+                    {/* Progress bar */}
+                    <div className="h-2.5 rounded-full bg-white/12 relative overflow-hidden">
+                      <div
+                        className="absolute left-0 top-0 bottom-0 rounded-full transition-all duration-500 ease-out"
+                        style={{
+                          width: r.width,
+                          backgroundColor: r.bar,
+                        }}
+                      ></div>
+                      {/* Majority indicator line */}
+                      <div
+                        className="absolute top-0 bottom-0 w-0.5 bg-white opacity-70"
+                        style={{ left: majPct }}
+                        title="Linha da maioria absoluta"
+                      ></div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
 
             {/* Sub-footer controls inside Presb column */}

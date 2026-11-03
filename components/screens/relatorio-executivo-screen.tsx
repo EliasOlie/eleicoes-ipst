@@ -208,24 +208,30 @@ export function RelatorioExecutivoScreen({ standalone = false }: { standalone?: 
                 <span className="text-right">Situação</span>
               </div>
               <div className="flex flex-col divide-y divide-[#EEF1EE]">
-                {resDiac.map((r) => (
-                  <div
-                    key={r.id}
-                    className="grid grid-cols-[1fr_90px_110px_120px] items-center text-sm py-2.5"
-                  >
-                    <span className="font-semibold text-[#15201A]">{r.name}</span>
-                    <span className="text-right tabular-nums font-medium text-[#15201A]">
-                      {r.votes}
-                    </span>
-                    <span className="text-right tabular-nums text-[#5A675F]">{r.pct}</span>
-                    <span
-                      className="justify-self-end px-2.5 py-0.5 rounded-md text-xs font-bold"
-                      style={{ backgroundColor: r.sitBg, color: r.sitColor }}
-                    >
-                      {r.sit}
-                    </span>
+                {resDiac.length === 0 ? (
+                  <div className="py-4 text-center text-xs text-[#6B776F]">
+                    Nenhum candidato a diácono apurado.
                   </div>
-                ))}
+                ) : (
+                  resDiac.map((r) => (
+                    <div
+                      key={r.id}
+                      className="grid grid-cols-[1fr_90px_110px_120px] items-center text-sm py-2.5"
+                    >
+                      <span className="font-semibold text-[#15201A]">{r.name}</span>
+                      <span className="text-right tabular-nums font-medium text-[#15201A]">
+                        {r.votes}
+                      </span>
+                      <span className="text-right tabular-nums text-[#5A675F]">{r.pct}</span>
+                      <span
+                        className="justify-self-end px-2.5 py-0.5 rounded-md text-xs font-bold"
+                        style={{ backgroundColor: r.sitBg, color: r.sitColor }}
+                      >
+                        {r.sit}
+                      </span>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
@@ -242,24 +248,30 @@ export function RelatorioExecutivoScreen({ standalone = false }: { standalone?: 
                 <span className="text-right">Situação</span>
               </div>
               <div className="flex flex-col divide-y divide-[#EEF1EE]">
-                {resPresb.map((r) => (
-                  <div
-                    key={r.id}
-                    className="grid grid-cols-[1fr_90px_110px_120px] items-center text-sm py-2.5"
-                  >
-                    <span className="font-semibold text-[#15201A]">{r.name}</span>
-                    <span className="text-right tabular-nums font-medium text-[#15201A]">
-                      {r.votes}
-                    </span>
-                    <span className="text-right tabular-nums text-[#5A675F]">{r.pct}</span>
-                    <span
-                      className="justify-self-end px-2.5 py-0.5 rounded-md text-xs font-bold"
-                      style={{ backgroundColor: r.sitBg, color: r.sitColor }}
-                    >
-                      {r.sit}
-                    </span>
+                {resPresb.length === 0 ? (
+                  <div className="py-4 text-center text-xs text-[#6B776F]">
+                    Nenhum candidato a presbítero apurado.
                   </div>
-                ))}
+                ) : (
+                  resPresb.map((r) => (
+                    <div
+                      key={r.id}
+                      className="grid grid-cols-[1fr_90px_110px_120px] items-center text-sm py-2.5"
+                    >
+                      <span className="font-semibold text-[#15201A]">{r.name}</span>
+                      <span className="text-right tabular-nums font-medium text-[#15201A]">
+                        {r.votes}
+                      </span>
+                      <span className="text-right tabular-nums text-[#5A675F]">{r.pct}</span>
+                      <span
+                        className="justify-self-end px-2.5 py-0.5 rounded-md text-xs font-bold"
+                        style={{ backgroundColor: r.sitBg, color: r.sitColor }}
+                      >
+                        {r.sit}
+                      </span>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 

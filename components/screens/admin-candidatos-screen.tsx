@@ -162,7 +162,7 @@ export function AdminCandidatosScreen({ standalone = false }: { standalone?: boo
                       {vd}
                     </span>
                     <button
-                      onClick={() => setVd((v) => Math.min(diac.length, v + 1))}
+                      onClick={() => setVd((v) => Math.min(20, v + 1))}
                       disabled={votingOpen}
                       className="w-10 h-10 border-none bg-white text-lg font-semibold cursor-pointer hover:bg-[#EEF4F0] disabled:opacity-50"
                     >
@@ -174,21 +174,27 @@ export function AdminCandidatosScreen({ standalone = false }: { standalone?: boo
 
               {/* Candidates List */}
               <div className="flex flex-col divide-y divide-[#EEF1EE] max-h-[380px] overflow-y-auto pr-1">
-                {diac.map(([id, name]) => (
-                  <div key={id} className="flex items-center gap-3.5 py-3">
-                    <span className="w-10 h-10 shrink-0 rounded-full bg-[#DCE9E0] text-[#0A5C36] flex items-center justify-center font-bold text-sm">
-                      {getInitials(name)}
-                    </span>
-                    <span className="flex-1 text-[15px] font-semibold text-[#15201A]">{name}</span>
-                    <button
-                      onClick={() => removeCandidate('diac', id)}
-                      disabled={votingOpen}
-                      className="h-8.5 px-3 rounded-lg border border-[#DCE3DE] bg-white hover:bg-[#FBF1EF] text-[#8A3B2E] text-[13px] font-semibold cursor-pointer transition-colors disabled:opacity-50"
-                    >
-                      Remover
-                    </button>
+                {diac.length === 0 ? (
+                  <div className="py-8 text-center text-sm text-[#6B776F] bg-gray-50/50 rounded-xl my-2">
+                    Nenhum candidato a diácono cadastrado. Adicione abaixo.
                   </div>
-                ))}
+                ) : (
+                  diac.map(([id, name]) => (
+                    <div key={id} className="flex items-center gap-3.5 py-3">
+                      <span className="w-10 h-10 shrink-0 rounded-full bg-[#DCE9E0] text-[#0A5C36] flex items-center justify-center font-bold text-sm">
+                        {getInitials(name)}
+                      </span>
+                      <span className="flex-1 text-[15px] font-semibold text-[#15201A]">{name}</span>
+                      <button
+                        onClick={() => removeCandidate('diac', id)}
+                        disabled={votingOpen}
+                        className="h-8.5 px-3 rounded-lg border border-[#DCE3DE] bg-white hover:bg-[#FBF1EF] text-[#8A3B2E] text-[13px] font-semibold cursor-pointer transition-colors disabled:opacity-50"
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  ))
+                )}
               </div>
 
               {/* Add Input */}
@@ -235,7 +241,7 @@ export function AdminCandidatosScreen({ standalone = false }: { standalone?: boo
                       {vp}
                     </span>
                     <button
-                      onClick={() => setVp((v) => Math.min(presb.length, v + 1))}
+                      onClick={() => setVp((v) => Math.min(20, v + 1))}
                       disabled={votingOpen}
                       className="w-10 h-10 border-none bg-white text-lg font-semibold cursor-pointer hover:bg-[#EEF4F0] disabled:opacity-50"
                     >
@@ -247,21 +253,27 @@ export function AdminCandidatosScreen({ standalone = false }: { standalone?: boo
 
               {/* Candidates List */}
               <div className="flex flex-col divide-y divide-[#EEF1EE] max-h-[380px] overflow-y-auto pr-1">
-                {presb.map(([id, name]) => (
-                  <div key={id} className="flex items-center gap-3.5 py-3">
-                    <span className="w-10 h-10 shrink-0 rounded-full bg-[#DCE9E0] text-[#0A5C36] flex items-center justify-center font-bold text-sm">
-                      {getInitials(name)}
-                    </span>
-                    <span className="flex-1 text-[15px] font-semibold text-[#15201A]">{name}</span>
-                    <button
-                      onClick={() => removeCandidate('presb', id)}
-                      disabled={votingOpen}
-                      className="h-8.5 px-3 rounded-lg border border-[#DCE3DE] bg-white hover:bg-[#FBF1EF] text-[#8A3B2E] text-[13px] font-semibold cursor-pointer transition-colors disabled:opacity-50"
-                    >
-                      Remover
-                    </button>
+                {presb.length === 0 ? (
+                  <div className="py-8 text-center text-sm text-[#6B776F] bg-gray-50/50 rounded-xl my-2">
+                    Nenhum candidato a presbítero cadastrado. Adicione abaixo.
                   </div>
-                ))}
+                ) : (
+                  presb.map(([id, name]) => (
+                    <div key={id} className="flex items-center gap-3.5 py-3">
+                      <span className="w-10 h-10 shrink-0 rounded-full bg-[#DCE9E0] text-[#0A5C36] flex items-center justify-center font-bold text-sm">
+                        {getInitials(name)}
+                      </span>
+                      <span className="flex-1 text-[15px] font-semibold text-[#15201A]">{name}</span>
+                      <button
+                        onClick={() => removeCandidate('presb', id)}
+                        disabled={votingOpen}
+                        className="h-8.5 px-3 rounded-lg border border-[#DCE3DE] bg-white hover:bg-[#FBF1EF] text-[#8A3B2E] text-[13px] font-semibold cursor-pointer transition-colors disabled:opacity-50"
+                      >
+                        Remover
+                      </button>
+                    </div>
+                  ))
+                )}
               </div>
 
               {/* Add Input */}

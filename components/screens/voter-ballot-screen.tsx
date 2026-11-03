@@ -120,38 +120,44 @@ export function VoterBallotScreen({ standalone = false }: { standalone?: boolean
 
             {/* Candidates list */}
             <div className="flex-1 overflow-y-auto px-5 pb-4 flex flex-col gap-2.5">
-              {currentList.map(([id, name]) => {
-                const isSelected = currentSelection.includes(id);
-                const isLimitReached = !isSelected && currentSelection.length >= currentLimit;
+              {currentList.length === 0 ? (
+                <div className="py-12 text-center text-sm text-[#6B776F] bg-white rounded-2xl border border-dashed border-[#CBD5CE] p-6 my-auto">
+                  Nenhum candidato cadastrado para este cargo no momento.
+                </div>
+              ) : (
+                currentList.map(([id, name]) => {
+                  const isSelected = currentSelection.includes(id);
+                  const isLimitReached = !isSelected && currentSelection.length >= currentLimit;
 
-                return (
-                  <button
-                    key={id}
-                    onClick={() => toggleCandidateSelection(id)}
-                    disabled={isLimitReached}
-                    style={{ opacity: isLimitReached ? 0.45 : 1 }}
-                    className={`flex items-center gap-3.5 min-h-[68px] p-3 px-3.5 rounded-2xl border-[1.5px] text-left cursor-pointer transition-all ${
-                      isSelected
-                        ? 'border-[#0A5C36] bg-[#E7F0EA]'
-                        : 'border-[#CBD5CE] bg-white hover:border-[#0A5C36]/50'
-                    }`}
-                  >
-                    <span className="w-11 h-11 shrink-0 rounded-full bg-[#DCE9E0] text-[#0A5C36] flex items-center justify-center font-bold text-[15px]">
-                      {getInitials(name)}
-                    </span>
-                    <span className="flex-1 text-base font-semibold text-[#15201A]">{name}</span>
-                    <span
-                      className={`w-7 h-7 shrink-0 rounded-lg border-2 flex items-center justify-center text-base font-bold transition-all ${
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => toggleCandidateSelection(id)}
+                      disabled={isLimitReached}
+                      style={{ opacity: isLimitReached ? 0.45 : 1 }}
+                      className={`flex items-center gap-3.5 min-h-[68px] p-3 px-3.5 rounded-2xl border-[1.5px] text-left cursor-pointer transition-all ${
                         isSelected
-                          ? 'border-[#0A5C36] bg-[#0A5C36] text-white'
-                          : 'border-[#9AA8A0] bg-white'
+                          ? 'border-[#0A5C36] bg-[#E7F0EA]'
+                          : 'border-[#CBD5CE] bg-white hover:border-[#0A5C36]/50'
                       }`}
                     >
-                      {isSelected ? '✓' : ''}
-                    </span>
-                  </button>
-                );
-              })}
+                      <span className="w-11 h-11 shrink-0 rounded-full bg-[#DCE9E0] text-[#0A5C36] flex items-center justify-center font-bold text-[15px]">
+                        {getInitials(name)}
+                      </span>
+                      <span className="flex-1 text-base font-semibold text-[#15201A]">{name}</span>
+                      <span
+                        className={`w-7 h-7 shrink-0 rounded-lg border-2 flex items-center justify-center text-base font-bold transition-all ${
+                          isSelected
+                            ? 'border-[#0A5C36] bg-[#0A5C36] text-white'
+                            : 'border-[#9AA8A0] bg-white'
+                        }`}
+                      >
+                        {isSelected ? '✓' : ''}
+                      </span>
+                    </button>
+                  );
+                })
+              )}
             </div>
 
             {/* Bottom Button */}

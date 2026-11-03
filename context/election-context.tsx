@@ -96,31 +96,26 @@ const ElectionContext = createContext<ElectionContextType | null>(null);
 
 export function ElectionProvider({ children }: { children: React.ReactNode }) {
   // Config
-  const [diac, setDiac] = useState<[string, string, number][]>(INITIAL_DIAC);
-  const [presb, setPresb] = useState<[string, string, number][]>(INITIAL_PRESB);
+  const [diac, setDiac] = useState<[string, string, number][]>([]);
+  const [presb, setPresb] = useState<[string, string, number][]>([]);
   const [vd, setVdInternal] = useState(3);
   const [vp, setVpInternal] = useState(2);
 
   // Members & Check
-  const fallbackMembers = useMemo(() => generateMembers(), []);
-  const [members, setMembers] = useState<Member[]>(fallbackMembers);
-  const [checked, setChecked] = useState<Record<number, boolean>>(() =>
-    generateInitialCheck(fallbackMembers)
-  );
+  const [members, setMembers] = useState<Member[]>([]);
+  const [checked, setChecked] = useState<Record<number, boolean>>({});
 
   const [votingOpen, setVotingOpen] = useState(false);
-  const [published, setPublished] = useState(77);
-  const [publishedAt, setPublishedAt] = useState('19:45');
+  const [published, setPublished] = useState(0);
+  const [publishedAt, setPublishedAt] = useState('');
   const [filter, setFilter] = useState<'all' | 'pend'>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Counting
-  const initialZeroTally = useCallback(() => {
-    return Object.fromEntries([...INITIAL_DIAC, ...INITIAL_PRESB].map((c) => [c[0], 0]));
-  }, []);
+  const initialZeroTally = useCallback(() => ({}), []);
 
   const [counted, setCounted] = useState(0);
-  const [tally, setTally] = useState<Record<string, number>>(initialZeroTally);
+  const [tally, setTally] = useState<Record<string, number>>({});
   const [blanks, setBlanks] = useState(0);
 
   // Voter session
@@ -146,9 +141,9 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
     } catch {
       setCounted(0);
       setBlanks(0);
-      setTally(initialZeroTally());
+      setTally({});
     }
-  }, [initialZeroTally]);
+  }, []);
 
   // 1. Fetch State from Postgres API
   const refreshState = useCallback(async () => {
@@ -159,18 +154,18 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
 
       if (data.config) {
         setVotingOpen(!!data.config.votingOpen);
-        setPublished(data.config.published || 77);
-        setPublishedAt(data.config.publishedAt || '19:45');
+        setPublished(data.config.published ?? 0);
+        setPublishedAt(data.config.publishedAt || '');
         setVdInternal(data.config.vagasDiac || 3);
         setVpInternal(data.config.vagasPresb || 2);
       }
 
       if (data.candidates) {
-        if (data.candidates.diac?.length) setDiac(data.candidates.diac);
-        if (data.candidates.presb?.length) setPresb(data.candidates.presb);
+        setDiac(data.candidates.diac || []);
+        setPresb(data.candidates.presb || []);
       }
 
-      if (data.members?.length) {
+      if (data.members) {
         setMembers(
           data.members.map((m: any) => ({
             id: m.id,
@@ -189,7 +184,7 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
 
       setCounted(data.counted || 0);
       setBlanks(data.blanks || 0);
-      if (data.tally) setTally(data.tally);
+      setTally(data.tally || {});
     } catch (e) {
       console.warn('Could not sync with Postgres API, using cached state:', e);
     }
