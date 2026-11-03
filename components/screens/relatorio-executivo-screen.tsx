@@ -68,7 +68,7 @@ export function RelatorioExecutivoScreen({ standalone = false }: { standalone?: 
             <span className="text-2xl font-bold text-[#15201A] tabular-nums">{published}</span>
           </div>
           <div className="p-4 flex flex-col gap-1 bg-[#FDFEFE]">
-            <span className="text-xs text-[#6B776F]">Quórum mínimo (1/3)</span>
+            <span className="text-xs text-[#6B776F]">Quórum mínimo (50%)</span>
             <span className="text-2xl font-bold text-[#15201A] tabular-nums">{quorumMinimo}</span>
           </div>
           <div className="p-4 flex flex-col gap-1 bg-[#FDFEFE]">

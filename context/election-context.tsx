@@ -30,6 +30,7 @@ interface ElectionContextType {
   vagasPresb: number;
   setVd: (val: number | ((prev: number) => number)) => void;
   setVp: (val: number | ((prev: number) => number)) => void;
+  setTotalComungantes: (val: number | ((prev: number) => number)) => void;
   addCandidate: (role: 'diac' | 'presb', name: string) => Promise<void>;
   removeCandidate: (role: 'diac' | 'presb', id: string) => Promise<void>;
 
@@ -75,14 +76,19 @@ interface ElectionContextType {
   voterPhone: string;
   setVoterPhone: (p: string) => void;
   loggedMember: string | null;
+  loggedMemberData: { id: number; name: string; phone: string; checked: boolean; hasVoted: boolean } | null;
+  isMemberChecked: boolean;
+  loginLoading: boolean;
+  loginError: string;
   ballotStep: 'login' | 'vote' | 'review' | 'done';
   setBallotStep: (s: 'login' | 'vote' | 'review' | 'done') => void;
   ballotTab: 'diac' | 'presb';
   setBallotTab: (t: 'diac' | 'presb') => void;
   selection: { diac: string[]; presb: string[] };
   toggleCandidateSelection: (id: string) => void;
-  loginMember: () => void;
+  loginMember: () => Promise<boolean>;
   confirmVote: () => Promise<void>;
+  castPaperVote: (selection: { diac: string[]; presb: string[] }) => Promise<{ success: boolean; receipt?: string; error?: string }>;
   resetBallot: () => void;
   receipt: string;
   votingError: string;
@@ -124,6 +130,15 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
   const [voterName, setVoterName] = useState('');
   const [voterPhone, setVoterPhone] = useState('');
   const [loggedMember, setLoggedMember] = useState<string | null>(null);
+  const [loggedMemberData, setLoggedMemberData] = useState<{
+    id: number;
+    name: string;
+    phone: string;
+    checked: boolean;
+    hasVoted: boolean;
+  } | null>(null);
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
   const [ballotStep, setBallotStep] = useState<'login' | 'vote' | 'review' | 'done'>('login');
   const [ballotTab, setBallotTab] = useState<'diac' | 'presb'>('diac');
   const [selection, setSelection] = useState<{ diac: string[]; presb: string[] }>({
@@ -250,11 +265,39 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
                 ...prev,
                 [payload.memberId]: !!payload.checked,
               }));
+              setLoggedMemberData((prev) => {
+                if (prev && prev.id === payload.memberId) {
+                  return { ...prev, checked: !!payload.checked };
+                }
+                return prev;
+              });
+              break;
+
+            case 'MEMBER_REGISTERED':
+              if (payload.member) {
+                setMembers((prev) => {
+                  if (prev.some((m) => m.id === payload.member.id)) return prev;
+                  return [
+                    ...prev,
+                    {
+                      id: payload.member.id,
+                      name: payload.member.name,
+                      phone: payload.member.phone,
+                      time: payload.member.time || '19:00',
+                    },
+                  ].sort((a, b) => a.name.localeCompare(b.name));
+                });
+                setChecked((prev) => ({
+                  ...prev,
+                  [payload.member.id]: !!payload.member.checked,
+                }));
+              }
               break;
 
             case 'VACANCIES_UPDATED':
               if (payload.vagasDiac) setVdInternal(payload.vagasDiac);
               if (payload.vagasPresb) setVpInternal(payload.vagasPresb);
+              if (payload.totalComungantes) setTotalComungantes(payload.totalComungantes);
               break;
 
             case 'CANDIDATE_ADDED':
@@ -290,8 +333,17 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
   const majority = Math.floor(published / 2) + 1;
   const maxV = Math.max(1, published);
   const isCompleted = counted >= published && published > 0;
-  const quorumMinimo = Math.ceil(totalComungantes / 3);
+  // Quórum estatutário da Assembleia IPB: 50% dos membros comungantes
+  const quorumMinimo = Math.ceil(totalComungantes * 0.5);
   const quorumAtingido = published >= quorumMinimo;
+
+  // Verificação individual do membro logado pela mesa
+  const isMemberChecked = useMemo(() => {
+    if (!loggedMemberData) return false;
+    return checked[loggedMemberData.id] !== undefined
+      ? !!checked[loggedMemberData.id]
+      : !!loggedMemberData.checked;
+  }, [loggedMemberData, checked]);
 
   const statusLabel = !votingOpen
     ? 'Votação não iniciada'
@@ -406,6 +458,23 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
     [vp]
   );
 
+  const setTotalComungantesServer = useCallback(
+    async (val: number | ((prev: number) => number)) => {
+      const nextVal = typeof val === 'function' ? val(totalComungantes) : val;
+      setTotalComungantes(nextVal);
+      try {
+        await fetch('/api/election/candidates', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ totalComungantes: nextVal }),
+        });
+      } catch (e) {
+        console.error('Failed to update total comungantes:', e);
+      }
+    },
+    [totalComungantes]
+  );
+
   // Add / Remove Candidates (Postgres + Redis)
   const addCandidate = useCallback(
     async (role: 'diac' | 'presb', name: string) => {
@@ -488,15 +557,47 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
   const resDiac = useMemo(() => computeResults(diac, vd), [computeResults, diac, vd]);
   const resPresb = useMemo(() => computeResults(presb, vp), [computeResults, presb, vp]);
 
-  // Voter session
-  const loginMember = useCallback(() => {
-    if (voterName.trim().length > 2) {
-      setLoggedMember(voterName.trim());
+  // Voter session - Check-in no sistema e conferência de rol
+  const loginMember = useCallback(async (): Promise<boolean> => {
+    if (voterName.trim().length < 3) return false;
+    setLoginLoading(true);
+    setLoginError('');
+
+    try {
+      const res = await fetch('/api/election/member/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: voterName.trim(),
+          phone: voterPhone.trim(),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setLoginError(data.error || 'Erro ao registrar entrada.');
+        setLoginLoading(false);
+        return false;
+      }
+
+      setLoggedMember(data.member.name);
+      setLoggedMemberData(data.member);
+      setChecked((prev) => ({
+        ...prev,
+        [data.member.id]: !!data.member.checked,
+      }));
       setBallotStep('vote');
       setSelection({ diac: [], presb: [] });
       setVotingError('');
+      setLoginLoading(false);
+      return true;
+    } catch {
+      setLoginError('Falha ao conectar com o servidor. Verifique sua conexão.');
+      setLoginLoading(false);
+      return false;
     }
-  }, [voterName]);
+  }, [voterName, voterPhone]);
 
   const toggleCandidateSelection = useCallback(
     (id: string) => {
@@ -546,11 +647,35 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
     }
   }, [voterName, voterPhone, selection]);
 
+  // Cast paper vote for elderly or manual contingency
+  const castPaperVote = useCallback(
+    async (paperSelection: { diac: string[]; presb: string[] }) => {
+      try {
+        const res = await fetch('/api/election/vote/paper', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ selection: paperSelection }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          return { success: false, error: data.error || 'Erro ao computar cédula de papel' };
+        }
+        return { success: true, receipt: data.receipt, totalCounted: data.totalCounted };
+      } catch {
+        return { success: false, error: 'Falha na conexão ao registrar cédula de papel.' };
+      }
+    },
+    []
+  );
+
   const resetBallot = useCallback(() => {
     setBallotStep('login');
     setSelection({ diac: [], presb: [] });
     setBallotTab('diac');
     setLoggedMember(null);
+    setLoggedMemberData(null);
+    setLoginError('');
+    setLoginLoading(false);
     setVoterName('');
     setVoterPhone('');
     setReceipt('');
@@ -574,6 +699,7 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
     vagasPresb: vp,
     setVd,
     setVp,
+    setTotalComungantes: setTotalComungantesServer,
     addCandidate,
     removeCandidate,
     members,
@@ -613,6 +739,10 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
     voterPhone,
     setVoterPhone: (val: string) => setVoterPhone(maskPhone(val)),
     loggedMember,
+    loggedMemberData,
+    isMemberChecked,
+    loginLoading,
+    loginError,
     ballotStep,
     setBallotStep,
     ballotTab,
@@ -621,6 +751,7 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
     toggleCandidateSelection,
     loginMember,
     confirmVote,
+    castPaperVote,
     resetBallot,
     receipt,
     votingError,

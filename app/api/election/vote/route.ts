@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
 
     // 2. Find member in DB
     const memberRows = await sql`
-      SELECT id, name, phone, has_voted
+      SELECT id, name, phone, checked_in, has_voted
       FROM members
       WHERE LOWER(name) = ${cleanName} OR REPLACE(phone, ' ', '') LIKE ${'%' + cleanPhone.slice(-8) + '%'}
       LIMIT 1
@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
       const nameParts = cleanName.split(' ');
       const searchPattern = `%${nameParts[0]}%${nameParts[nameParts.length - 1]}%`;
       const fallbackRows = await sql`
-        SELECT id, name, phone, has_voted
+        SELECT id, name, phone, checked_in, has_voted
         FROM members
         WHERE LOWER(name) LIKE ${searchPattern}
         LIMIT 1
@@ -46,7 +46,21 @@ export async function POST(req: NextRequest) {
     }
 
     const member = memberRows[0];
-    if (member && member.has_voted) {
+    if (!member) {
+      return NextResponse.json(
+        { error: 'Membro não identificado no sistema. Registre sua presença na entrada primeiro.' },
+        { status: 403 }
+      );
+    }
+
+    if (!member.checked_in) {
+      return NextResponse.json(
+        { error: 'Voto não autorizado. Seu nome ainda não foi conferido no livro de presença de membros comungantes pela Mesa.' },
+        { status: 403 }
+      );
+    }
+
+    if (member.has_voted) {
       return NextResponse.json(
         { error: 'Este membro já exerceu seu direito de voto. Acesso encerrado.' },
         { status: 403 }

@@ -58,7 +58,7 @@ export function generateInitialCheck(members: Member[]): Record<number, boolean>
 }
 
 export const TOTAL_COMUNGANTES = 214;
-export const QUORUM_MINIMO = Math.ceil(TOTAL_COMUNGANTES / 3); // 72
+export const QUORUM_MINIMO = Math.ceil(TOTAL_COMUNGANTES * 0.5); // 50% = 107
 
 export function getInitials(name: string): string {
   const parts = name.trim().split(' ').filter(Boolean);

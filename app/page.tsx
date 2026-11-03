@@ -7,13 +7,13 @@ import { VoterBlockedScreen } from '@/components/screens/voter-blocked-screen';
 import { VoterBallotScreen } from '@/components/screens/voter-ballot-screen';
 
 export default function VoterPage() {
-  const { loggedMember, votingOpen } = useElection();
+  const { loggedMember, isMemberChecked, votingOpen } = useElection();
 
   return (
     <main className="min-h-screen bg-[#E9ECE8] sm:py-8 sm:px-4 flex flex-col items-center justify-center p-0">
       {!loggedMember ? (
         <VoterLoginScreen standalone={true} />
-      ) : !votingOpen ? (
+      ) : !isMemberChecked || !votingOpen ? (
         <VoterBlockedScreen standalone={true} />
       ) : (
         <VoterBallotScreen standalone={true} />

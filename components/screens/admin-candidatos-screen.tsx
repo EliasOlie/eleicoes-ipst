@@ -15,6 +15,9 @@ export function AdminCandidatosScreen({ standalone = false }: { standalone?: boo
     setVp,
     vagasDiac,
     vagasPresb,
+    totalComungantes,
+    setTotalComungantes,
+    quorumMinimo,
     addCandidate,
     removeCandidate,
     votingOpen,
@@ -58,8 +61,8 @@ export function AdminCandidatosScreen({ standalone = false }: { standalone?: boo
         </div>
       )}
 
-      {/* Vacancy Steppers */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Vacancy & Quorum Steppers */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Diaconato Vagas */}
         <div className="p-5 rounded-2xl bg-white border border-[#DCE3DE] shadow-xs flex justify-between items-center">
           <div className="flex flex-col gap-0.5">
@@ -108,6 +111,35 @@ export function AdminCandidatosScreen({ standalone = false }: { standalone?: boo
               onClick={() => setVp((v: number) => v + 1)}
               disabled={votingOpen}
               className="w-9 h-9 rounded-xl border border-[#CBD5CE] bg-white hover:bg-gray-50 flex items-center justify-center font-bold text-lg text-[#15201A] cursor-pointer transition-colors disabled:opacity-40"
+            >
+              +
+            </button>
+          </div>
+        </div>
+
+        {/* Total Comungantes (Quorum 50%) */}
+        <div className="p-5 rounded-2xl bg-white border border-[#DCE3DE] shadow-xs flex justify-between items-center">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-base font-semibold text-[#15201A]">Membros no rol</span>
+            <span className="text-xs text-[#6B776F]">Quórum 50%: {quorumMinimo}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setTotalComungantes((v: number) => Math.max(10, v - 10))}
+              disabled={votingOpen || totalComungantes <= 10}
+              className="w-9 h-9 rounded-xl border border-[#CBD5CE] bg-white hover:bg-gray-50 flex items-center justify-center font-bold text-lg text-[#15201A] cursor-pointer transition-colors disabled:opacity-40"
+              title="Diminuir 10 membros"
+            >
+              −
+            </button>
+            <span className="w-12 text-center text-xl font-bold tabular-nums text-[#15201A]">
+              {totalComungantes}
+            </span>
+            <button
+              onClick={() => setTotalComungantes((v: number) => v + 10)}
+              disabled={votingOpen}
+              className="w-9 h-9 rounded-xl border border-[#CBD5CE] bg-white hover:bg-gray-50 flex items-center justify-center font-bold text-lg text-[#15201A] cursor-pointer transition-colors disabled:opacity-40"
+              title="Aumentar 10 membros"
             >
               +
             </button>

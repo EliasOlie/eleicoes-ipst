@@ -13,11 +13,17 @@ export function VoterLoginScreen({ standalone = false }: { standalone?: boolean 
     setVoterPhone,
     loginMember,
     loggedMember,
+    loginLoading,
+    loginError,
   } = useElection();
 
   const isValid = voterName.trim().length > 2 && voterPhone.length >= 15;
-  const loginOpacity = isValid ? 1 : 0.55;
-  const loginLabel = loggedMember ? 'Acesso liberado ✓' : 'Entrar para votar';
+  const loginOpacity = isValid && !loginLoading ? 1 : 0.55;
+  const loginLabel = loginLoading
+    ? 'Registrando presença...'
+    : loggedMember
+    ? 'Acesso liberado ✓'
+    : 'Registrar presença e entrar';
 
   return (
     <div className={`flex flex-col gap-3.5 ${standalone ? 'w-full max-w-[460px] mx-auto px-4 py-6' : 'w-[390px]'}`}>
@@ -105,21 +111,30 @@ export function VoterLoginScreen({ standalone = false }: { standalone?: boolean 
             />
           </label>
 
+          {loginError && (
+            <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
+              {loginError}
+            </div>
+          )}
+
           <button
             onClick={loginMember}
-            disabled={!isValid}
+            disabled={!isValid || loginLoading}
             style={{ opacity: loginOpacity }}
-            className="h-12 border-none rounded-xl bg-[#0A5C36] hover:bg-[#073D24] text-white text-sm font-semibold cursor-pointer transition-all shadow-md active:scale-[0.99] disabled:cursor-not-allowed mt-1"
+            className="h-12 border-none rounded-xl bg-[#0A5C36] hover:bg-[#073D24] text-white text-sm font-semibold cursor-pointer transition-all shadow-md active:scale-[0.99] disabled:cursor-not-allowed mt-1 flex items-center justify-center gap-2"
           >
-            {loginLabel}
+            {loginLoading && (
+              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+            )}
+            <span>{loginLabel}</span>
           </button>
 
           <div className="flex flex-col gap-2 mt-auto p-3.5 rounded-xl bg-[#EEF4F0] text-xs leading-relaxed text-[#33433A]">
             <div>
-              <strong>Acesso único.</strong> O voto é secreto e confirmado de forma anônima.
+              <strong>Conferência de Ata & Quórum:</strong> Sua presença será conferida pela Mesa contra o livro de assinaturas da Assembleia.
             </div>
             <div className="text-[#5A675F]">
-              Nenhum dado é gravado no banco antes da confirmação final da cédula.
+              <strong>Sigilo inviolável:</strong> O conteúdo da sua cédula de voto é 100% secreto e anônimo.
             </div>
           </div>
 

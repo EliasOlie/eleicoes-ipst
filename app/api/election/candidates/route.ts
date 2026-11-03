@@ -12,19 +12,23 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
 
-    // Check if updating vacancies
-    if (body.vagasDiac !== undefined || body.vagasPresb !== undefined) {
+    // Check if updating vacancies or total communicants
+    if (body.vagasDiac !== undefined || body.vagasPresb !== undefined || body.totalComungantes !== undefined) {
       if (body.vagasDiac !== undefined) {
         await sql`UPDATE election_config SET vagas_diac = ${body.vagasDiac} WHERE id = 1`;
       }
       if (body.vagasPresb !== undefined) {
         await sql`UPDATE election_config SET vagas_presb = ${body.vagasPresb} WHERE id = 1`;
       }
+      if (body.totalComungantes !== undefined) {
+        await sql`UPDATE election_config SET total_comungantes = ${body.totalComungantes} WHERE id = 1`;
+      }
 
       await publishElectionEvent({
         type: 'VACANCIES_UPDATED',
         vagasDiac: body.vagasDiac,
         vagasPresb: body.vagasPresb,
+        totalComungantes: body.totalComungantes,
       });
 
       return NextResponse.json({ success: true });
