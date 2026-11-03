@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:init": "node db/init.mjs",
+    "db:clean": "node db/clean.mjs",
+    "test:stress": "node scripts/stress-test.mjs"
   },
   "dependencies": {
     "canvas-confetti": "^1.9.4",
