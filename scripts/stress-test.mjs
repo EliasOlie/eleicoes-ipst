@@ -76,6 +76,8 @@ async function run() {
   console.log(`Taxa de presença na Ata:   ${data.scenario.checkInRate}`);
   console.log(`Quórum aprovado pela Mesa: ${data.results.totalVotersInAta} membros`);
   console.log(`Votos computados com êxito: ${data.results.successVotes}`);
+  console.log(`Cédulas físicas de papel:  ${data.results.paperVotes || 0} escrutinadas na mesa`);
+  console.log(`Total geral na Ata:        ${data.results.countedVotesInDb} votos`);
   console.log(`Votos em branco:           ${data.results.blankVotesInDb}`);
   console.log(`Bloqueio de voto duplo:    ${data.results.duplicateRejectionsVerified} testados e bloqueados ✓`);
   console.log(`Erros ou falhas:           ${data.results.errors}`);

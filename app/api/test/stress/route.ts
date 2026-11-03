@@ -228,6 +228,28 @@ export async function POST(req: NextRequest) {
     const workers = Array.from({ length: concurrency }, () => voteWorker());
     await Promise.all(workers);
 
+    // --- ETAPA 3b: Escrutínio Unificado de Cédulas Físicas de Papel (Novo Modelo) ---
+    const paperBallotsCount = 15;
+    for (let p = 1; p <= paperBallotsCount; p++) {
+      const receipt = `PAPEL-${String(p).padStart(3, '0')}`;
+      const selDiac = pickWeighted(diacList, vagasDiac);
+      const selPresb = pickWeighted(presbList, vagasPresb);
+      await sql.begin(async (tx) => {
+        const vInsert = await tx`
+          INSERT INTO votes (receipt, is_blank)
+          VALUES (${receipt}, false)
+          RETURNING id
+        `;
+        const voteId = vInsert[0].id;
+        for (const candId of [...selDiac, ...selPresb]) {
+          await tx`
+            INSERT INTO vote_candidates (vote_id, candidate_id)
+            VALUES (${voteId}, ${candId})
+          `;
+        }
+      });
+    }
+
     // --- ETAPA 4: Notificação final via Redis e Totalização ---
     const finalVoteCount = await sql`SELECT count(*)::int as total FROM votes`;
     const finalBlankCount = await sql`SELECT count(*)::int as total FROM votes WHERE is_blank = true`;
@@ -278,6 +300,7 @@ export async function POST(req: NextRequest) {
       results: {
         totalVotersInAta: publishedQuorum,
         successVotes,
+        paperVotes: paperBallotsCount,
         duplicateRejectionsVerified: duplicateRejections,
         errors,
         countedVotesInDb: finalVoteCount[0]?.total || 0,
