@@ -18,13 +18,17 @@ export function VoterLoginScreen({ standalone = false }: { standalone?: boolean 
   const loginLabel = loggedMember ? 'Acesso liberado ✓' : 'Entrar para votar';
 
   return (
-    <div className={`flex flex-col gap-3.5 ${standalone ? 'w-full max-w-[420px] mx-auto' : ''}`}>
+    <div className={`flex flex-col gap-3.5 ${standalone ? 'w-full max-w-[440px] mx-auto' : 'w-[390px]'}`}>
       {!standalone && (
         <div className="text-sm font-semibold text-[#4A574F]">01 · Login do membro</div>
       )}
-      <div className="w-[390px] max-w-full h-[800px] rounded-[46px] border-[10px] border-[#121714] bg-[#FBFCFA] overflow-hidden flex flex-col shadow-2xl mx-auto">
+      <div className={`w-full bg-[#FBFCFA] overflow-hidden flex flex-col ${
+        standalone
+          ? 'min-h-screen sm:min-h-[780px] sm:rounded-3xl sm:shadow-xl sm:border sm:border-[#DCE3DE]'
+          : 'min-h-[780px] rounded-2xl shadow-md border border-[#DCE3DE]'
+      }`}>
         {/* Header */}
-        <div className="bg-[#0A5C36] text-white p-7 pt-14 pb-9 flex flex-col gap-4.5">
+        <div className="bg-[#0A5C36] text-white p-7 pt-14 pb-9 flex flex-col gap-4.5 shrink-0">
           <img
             src="/assets/ipst_logo.jpg"
             alt="Igreja Presbiteriana de Serra Talhada"

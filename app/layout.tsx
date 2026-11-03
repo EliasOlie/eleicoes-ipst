@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Public_Sans, Source_Serif_4 } from "next/font/google";
 import "./globals.css";
 import { ElectionProvider } from "@/context/election-context";
-import { NavSwitcher } from "@/components/nav-switcher";
 import { PwaRegister } from "@/components/pwa-register";
 
 const publicSans = Public_Sans({
@@ -58,8 +57,7 @@ export default function RootLayout({
     >
       <body className="min-h-screen bg-[#E9ECE8] text-[#15201A] flex flex-col font-sans">
         <ElectionProvider>
-          <NavSwitcher />
-          <div className="flex-1">{children}</div>
+          <div className="flex-1 flex flex-col">{children}</div>
           <PwaRegister />
         </ElectionProvider>
       </body>

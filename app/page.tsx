@@ -10,16 +10,14 @@ export default function VoterPage() {
   const { loggedMember, votingOpen } = useElection();
 
   return (
-    <main className="min-h-screen bg-[#E9ECE8] py-6 sm:py-10 px-4 flex flex-col items-center justify-center">
-      <div className="w-full max-w-md mx-auto">
-        {!loggedMember ? (
-          <VoterLoginScreen standalone={true} />
-        ) : !votingOpen ? (
-          <VoterBlockedScreen standalone={true} />
-        ) : (
-          <VoterBallotScreen standalone={true} />
-        )}
-      </div>
+    <main className="min-h-screen bg-[#E9ECE8] sm:py-8 sm:px-4 flex flex-col items-center justify-center p-0">
+      {!loggedMember ? (
+        <VoterLoginScreen standalone={true} />
+      ) : !votingOpen ? (
+        <VoterBlockedScreen standalone={true} />
+      ) : (
+        <VoterBallotScreen standalone={true} />
+      )}
     </main>
   );
 }

@@ -44,7 +44,7 @@ export function VoterBallotScreen({ standalone = false }: { standalone?: boolean
           colors: ['#0A5C36', '#9FD3B1', '#073D24', '#ffffff'],
         });
       } catch (e) {
-        // Confetti fallback
+        // Fallback
       }
     }
   }, [isDone]);
@@ -61,11 +61,15 @@ export function VoterBallotScreen({ standalone = false }: { standalone?: boolean
   const reviewPresbNames = getCandidateNames(presb, selection.presb);
 
   return (
-    <div className={`flex flex-col gap-3.5 ${standalone ? 'w-full max-w-[420px] mx-auto' : ''}`}>
+    <div className={`flex flex-col gap-3.5 ${standalone ? 'w-full max-w-[440px] mx-auto' : 'w-[390px]'}`}>
       {!standalone && (
         <div className="text-sm font-semibold text-[#4A574F]">02b · Cédula liberada</div>
       )}
-      <div className="w-[390px] max-w-full h-[800px] rounded-[46px] border-[10px] border-[#121714] bg-[#FBFCFA] overflow-hidden flex flex-col shadow-2xl mx-auto">
+      <div className={`w-full bg-[#FBFCFA] overflow-hidden flex flex-col ${
+        standalone
+          ? 'min-h-screen sm:min-h-[780px] sm:rounded-3xl sm:shadow-xl sm:border sm:border-[#DCE3DE]'
+          : 'min-h-[780px] rounded-2xl shadow-md border border-[#DCE3DE]'
+      }`}>
         {/* Header */}
         <div className="bg-[#0A5C36] text-white p-6 pt-12 pb-5 flex flex-col gap-3.5 shrink-0">
           <div className="flex justify-between items-center gap-3">

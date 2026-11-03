@@ -27,11 +27,15 @@ export function MesaAtaScreen({ standalone = false }: { standalone?: boolean }) 
     : 'Votação bloqueada aguardando quórum';
 
   return (
-    <div className={`flex flex-col gap-3.5 ${standalone ? 'w-full max-w-[420px] mx-auto' : ''}`}>
+    <div className={`flex flex-col gap-3.5 ${standalone ? 'w-full max-w-[480px] mx-auto' : 'w-[390px]'}`}>
       {!standalone && (
         <div className="text-sm font-semibold text-[#4A574F]">03 · Conferência de ata (mesa)</div>
       )}
-      <div className="w-[390px] max-w-full h-[800px] rounded-[46px] border-[10px] border-[#121714] bg-[#FBFCFA] overflow-hidden flex flex-col shadow-2xl mx-auto">
+      <div className={`w-full bg-[#FBFCFA] overflow-hidden flex flex-col ${
+        standalone
+          ? 'min-h-screen sm:min-h-[780px] sm:rounded-3xl sm:shadow-xl sm:border sm:border-[#DCE3DE]'
+          : 'min-h-[780px] rounded-2xl shadow-md border border-[#DCE3DE]'
+      }`}>
         {/* Header */}
         <div className="bg-[#073D24] text-white p-5 pt-12 pb-4.5 flex flex-col gap-3.5 shrink-0">
           <div className="flex flex-col gap-0.5">

@@ -5,19 +5,23 @@ import { useElection } from '@/context/election-context';
 import { Check } from 'lucide-react';
 
 export function VoterBlockedScreen({ standalone = false }: { standalone?: boolean }) {
-  const { loggedMember, votingOpen } = useElection();
+  const { loggedMember } = useElection();
   const firstName = (loggedMember || 'Maria').split(' ')[0];
 
   return (
-    <div className={`flex flex-col gap-3.5 ${standalone ? 'w-full max-w-[420px] mx-auto' : ''}`}>
+    <div className={`flex flex-col gap-3.5 ${standalone ? 'w-full max-w-[440px] mx-auto' : 'w-[390px]'}`}>
       {!standalone && (
         <div className="text-sm font-semibold text-[#4A574F]">
           02a · Cédula bloqueada (aguardando quórum)
         </div>
       )}
-      <div className="w-[390px] max-w-full h-[800px] rounded-[46px] border-[10px] border-[#121714] bg-[#FBFCFA] overflow-hidden flex flex-col shadow-2xl mx-auto">
+      <div className={`w-full bg-[#FBFCFA] overflow-hidden flex flex-col ${
+        standalone
+          ? 'min-h-screen sm:min-h-[780px] sm:rounded-3xl sm:shadow-xl sm:border sm:border-[#DCE3DE]'
+          : 'min-h-[780px] rounded-2xl shadow-md border border-[#DCE3DE]'
+      }`}>
         {/* Header */}
-        <div className="bg-[#0A5C36] text-white p-6 pt-12 pb-5 flex flex-col gap-3.5">
+        <div className="bg-[#0A5C36] text-white p-6 pt-12 pb-5 flex flex-col gap-3.5 shrink-0">
           <div className="flex justify-between items-center gap-3">
             <div className="flex flex-col gap-0.5">
               <div className="text-[13px] text-[#CFE3D6]">Olá, {firstName}</div>
