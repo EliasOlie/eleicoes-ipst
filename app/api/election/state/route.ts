@@ -7,11 +7,11 @@ export async function GET() {
     const configRows = await sql`SELECT * FROM election_config WHERE id = 1 LIMIT 1`;
     const config = configRows[0] || {
       voting_open: false,
-      published_quorum: 77,
-      published_at: '19:45',
+      published_quorum: 0,
+      published_at: '',
       vagas_diac: 3,
       vagas_presb: 2,
-      total_comungantes: 214,
+      total_comungantes: 300,
     };
 
     // 2. Candidates

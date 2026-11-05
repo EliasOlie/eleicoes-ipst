@@ -148,7 +148,7 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
   const [receipt, setReceipt] = useState('');
   const [votingError, setVotingError] = useState('');
   const [simulationActive, setSimulationActive] = useState(true);
-  const [totalComungantes, setTotalComungantes] = useState<number>(500);
+  const [totalComungantes, setTotalComungantes] = useState<number>(300);
 
   // Admin user state
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
@@ -335,7 +335,8 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
   const isCompleted = counted >= published && published > 0;
   // Quórum estatutário da Assembleia IPB: 50% dos membros comungantes
   const quorumMinimo = Math.ceil(totalComungantes * 0.5);
-  const quorumAtingido = published >= quorumMinimo;
+  const currentAttendance = votingOpen ? published : confirmedCount;
+  const quorumAtingido = currentAttendance >= quorumMinimo;
 
   // Verificação individual do membro logado pela mesa
   const isMemberChecked = useMemo(() => {

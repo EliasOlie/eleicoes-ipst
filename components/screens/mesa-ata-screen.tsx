@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useElection } from '@/context/election-context';
 import { PaperBallotModal } from '@/components/paper-ballot-modal';
-import { FileText, UserPlus, X, CheckCircle2 } from 'lucide-react';
+import { FileText, UserPlus, X, CheckCircle2, Edit3 } from 'lucide-react';
 import Link from 'next/link';
 
 export function MesaAtaScreen({ standalone = false }: { standalone?: boolean }) {
@@ -25,11 +25,14 @@ export function MesaAtaScreen({ standalone = false }: { standalone?: boolean }) 
     isAdminAuthenticated,
     quorumMinimo,
     totalComungantes,
+    setTotalComungantes,
     quorumAtingido,
   } = useElection();
 
   const [showPaperModal, setShowPaperModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showRollModal, setShowRollModal] = useState(false);
+  const [editingRoll, setEditingRoll] = useState(String(totalComungantes));
   const [manualName, setManualName] = useState('');
   const [manualPhone, setManualPhone] = useState('');
   const [addingMember, setAddingMember] = useState(false);
@@ -56,10 +59,24 @@ export function MesaAtaScreen({ standalone = false }: { standalone?: boolean }) 
     }
   };
 
-  const publishLabel = votingOpen ? 'Reenviar quórum' : 'Aprovar quórum (50%) e liberar votação';
+  const handleSaveRoll = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const val = parseInt(editingRoll, 10);
+    if (!isNaN(val) && val > 0) {
+      await setTotalComungantes(val);
+      setShowRollModal(false);
+    }
+  };
+
+  const publishLabel = votingOpen
+    ? `Reenviar quórum da ata (${confirmedCount} membros)`
+    : quorumAtingido
+    ? `Aprovar quórum da ata (${confirmedCount} membros) e liberar votação`
+    : `Aprovar quórum da ata (${confirmedCount} membros · 2ª Convocação)`;
+
   const publishedNote = votingOpen
-    ? `Votação liberada · ${published} membros às ${publishedAt}`
-    : `Quórum 50%: ${confirmedCount} de ${quorumMinimo} necessários`;
+    ? `Votação liberada com ${published} votantes da ata às ${publishedAt}`
+    : `Conferidos: ${confirmedCount} · Quórum 1ª conv.: ${quorumMinimo} (50% de ${totalComungantes} no rol)`;
 
   return (
     <div className={`flex flex-col gap-3.5 ${standalone ? 'w-full max-w-[480px] mx-auto' : 'w-[390px]'}`}>
@@ -188,10 +205,28 @@ export function MesaAtaScreen({ standalone = false }: { standalone?: boolean }) 
         {/* Bottom Actions */}
         <div className="p-3.5 px-5 pb-7 border-t border-[#E2E8E4] bg-white flex flex-col gap-2.5 shrink-0">
           <div className="flex justify-between items-baseline">
-            <span className="text-sm text-[#4A574F]">Membros aptos no rol</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm text-[#4A574F]">Conferidos no Livro</span>
+              {isAdminAuthenticated && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditingRoll(String(totalComungantes));
+                    setShowRollModal(true);
+                  }}
+                  className="text-[11px] text-[#0A5C36] hover:bg-[#D5E6DB] font-semibold cursor-pointer flex items-center gap-1 bg-[#EEF4F0] px-2 py-0.5 rounded-md transition-colors"
+                  title="Ajustar número oficial do rol de comungantes constante na ata"
+                >
+                  <Edit3 size={10} />
+                  <span>Rol: {totalComungantes}</span>
+                </button>
+              )}
+            </div>
             <div className="flex items-baseline gap-2">
               <span className="text-2xl font-bold text-[#0A5C36] tabular-nums">{confirmedCount}</span>
-              <span className="text-xs text-[#7A867E]">de {quorumMinimo} (50%)</span>
+              <span className="text-xs text-[#7A867E]">
+                de {quorumMinimo} ({quorumAtingido ? '✓ 50% atingido' : '50% 1ª conv.'})
+              </span>
             </div>
           </div>
 
@@ -279,6 +314,57 @@ export function MesaAtaScreen({ standalone = false }: { standalone?: boolean }) 
                   className="px-4 py-2 bg-[#0A5C36] hover:bg-[#073D24] text-white text-xs font-semibold rounded-lg shadow-xs cursor-pointer"
                 >
                   {addingMember ? 'Salvando...' : 'Confirmar Presença'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Roll Modal */}
+      {showRollModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-2xs p-4 animate-in fade-in">
+          <div className="w-full max-w-sm bg-white rounded-2xl shadow-xl border border-gray-200 overflow-hidden p-5 flex flex-col gap-4">
+            <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+              <div className="font-semibold text-sm text-[#15201A]">Rol Oficial da Igreja (Ata do Conselho)</div>
+              <button
+                type="button"
+                onClick={() => setShowRollModal(false)}
+                className="text-gray-400 hover:text-gray-600 cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <form onSubmit={handleSaveRoll} className="flex flex-col gap-3">
+              <label className="flex flex-col gap-1 text-xs font-medium text-gray-700">
+                Total de membros comungantes no rol da igreja
+                <input
+                  type="number"
+                  min="1"
+                  max="5000"
+                  value={editingRoll}
+                  onChange={(e) => setEditingRoll(e.target.value)}
+                  className="h-10 px-3 rounded-lg border border-gray-300 text-sm focus:outline-none focus:ring-2 focus:ring-[#073D24]"
+                  required
+                />
+                <span className="text-[11px] text-[#6B776F] mt-1">
+                  O quórum de 50% para 1ª convocação será recalculado automaticamente para{' '}
+                  <strong className="text-[#073D24]">{Math.ceil((parseInt(editingRoll, 10) || 0) * 0.5)} membros</strong>.
+                </span>
+              </label>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowRollModal(false)}
+                  className="px-3 py-2 text-xs font-semibold text-gray-600 hover:text-gray-800"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-[#0A5C36] hover:bg-[#073D24] text-white text-xs font-semibold rounded-lg shadow-xs cursor-pointer"
+                >
+                  Atualizar Rol
                 </button>
               </div>
             </form>

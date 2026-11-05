@@ -170,7 +170,7 @@ export function VoterBlockedScreen({ standalone = false }: { standalone?: boolea
                     : 'text-[#6B776F]'
                 }`}
               >
-                Aprovação do Quórum de 50%
+                Conferência e aprovação do quórum pela Mesa
               </span>
             </div>
 

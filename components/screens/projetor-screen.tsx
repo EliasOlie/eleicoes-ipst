@@ -24,6 +24,7 @@ export function ProjetorScreen({ standalone = false }: { standalone?: boolean })
     quorumMinimo,
     totalComungantes,
     quorumAtingido,
+    confirmedCount,
   } = useElection();
 
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -70,10 +71,11 @@ export function ProjetorScreen({ standalone = false }: { standalone?: boolean })
     }
   };
 
+  const attendeesCount = votingOpen ? published : confirmedCount;
   const maxV = Math.max(1, published);
   const majPct = `${Math.min(100, (majority / maxV) * 100)}%`;
   const pctCounted = maxV > 0 ? Math.round((counted / maxV) * 100) : 0;
-  const quorumPct = totalComungantes > 0 ? Math.min(100, Math.round((published / quorumMinimo) * 100)) : 0;
+  const quorumPct = quorumMinimo > 0 ? Math.min(100, Math.round((attendeesCount / quorumMinimo) * 100)) : 0;
 
   const liveColor = !votingOpen ? '#E8C46A' : isCompleted ? '#C9D3CC' : '#7EE0A0';
   const liveLabel = !votingOpen
@@ -275,7 +277,7 @@ export function ProjetorScreen({ standalone = false }: { standalone?: boolean })
                     <span>Quórum Constitucional da Assembleia (50%)</span>
                   </span>
                   <span className="text-xs md:text-sm font-mono text-[#9FD3B1]">
-                    {published} de {quorumMinimo} necessários ({totalComungantes} membros)
+                    {attendeesCount} de {quorumMinimo} necessários ({totalComungantes} no rol da ata)
                   </span>
                 </div>
 
@@ -289,7 +291,7 @@ export function ProjetorScreen({ standalone = false }: { standalone?: boolean })
 
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-[#A9CDB6]">
-                    {published} {published === 1 ? 'membro comungante presente' : 'membros comungantes presentes'}
+                    {attendeesCount} {attendeesCount === 1 ? 'membro comungante conferido em ata' : 'membros comungantes conferidos em ata'}
                   </span>
                   <span
                     className={`font-bold px-2.5 py-0.5 rounded-full ${
@@ -298,7 +300,9 @@ export function ProjetorScreen({ standalone = false }: { standalone?: boolean })
                         : 'bg-amber-400/20 text-amber-300'
                     }`}
                   >
-                    {quorumAtingido ? 'Quórum de 50% Atingido ✓' : `Faltam ${Math.max(0, quorumMinimo - published)} para quórum`}
+                    {quorumAtingido
+                      ? 'Quórum de 1ª Convocação Atingido ✓'
+                      : `Faltam ${Math.max(0, quorumMinimo - attendeesCount)} para 50% (ou quórum em 2ª convocação)`}
                   </span>
                 </div>
               </div>

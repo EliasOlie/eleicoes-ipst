@@ -60,7 +60,7 @@ export function RelatorioExecutivoScreen({ standalone = false }: { standalone?: 
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 border border-[#DCE3DE] rounded-xl overflow-hidden divide-y sm:divide-y-0 sm:divide-x divide-[#DCE3DE]">
           <div className="p-4 flex flex-col gap-1 bg-[#FDFEFE]">
-            <span className="text-xs text-[#6B776F]">Membros comungantes</span>
+            <span className="text-xs text-[#6B776F]">Membros comungantes (Rol)</span>
             <span className="text-2xl font-bold text-[#15201A] tabular-nums">{totalComungantes}</span>
           </div>
           <div className="p-4 flex flex-col gap-1 bg-[#FDFEFE]">
@@ -68,17 +68,17 @@ export function RelatorioExecutivoScreen({ standalone = false }: { standalone?: 
             <span className="text-2xl font-bold text-[#15201A] tabular-nums">{published}</span>
           </div>
           <div className="p-4 flex flex-col gap-1 bg-[#FDFEFE]">
-            <span className="text-xs text-[#6B776F]">Quórum mínimo (50%)</span>
+            <span className="text-xs text-[#6B776F]">Quórum 1ª conv. (50%)</span>
             <span className="text-2xl font-bold text-[#15201A] tabular-nums">{quorumMinimo}</span>
           </div>
           <div className="p-4 flex flex-col gap-1 bg-[#FDFEFE]">
             <span className="text-xs text-[#6B776F]">Situação da Assembleia</span>
             <span
               className={`text-lg sm:text-xl font-bold ${
-                quorumAtingido ? 'text-[#0A5C36]' : 'text-amber-700'
+                quorumAtingido ? 'text-[#0A5C36]' : 'text-[#0A5C36]'
               }`}
             >
-              {quorumAtingido ? 'Atingido (Válido)' : 'Não atingido'}
+              {quorumAtingido ? 'Atingido (1ª Conv.)' : 'Válido (2ª Conv.)'}
             </span>
           </div>
         </div>
@@ -95,7 +95,7 @@ export function RelatorioExecutivoScreen({ standalone = false }: { standalone?: 
           </span>
           <span>·</span>
           <span>
-            Referência de maioria: <strong className="font-bold text-[#15201A]">{majority} votos</strong>
+            Referência de maioria: <strong className="font-bold text-[#15201A]">{majority} votos</strong> ({majority > 1 ? `mais de 50% dos ${published} da ata` : '50% + 1'})
           </span>
           <span>·</span>
           <span>
