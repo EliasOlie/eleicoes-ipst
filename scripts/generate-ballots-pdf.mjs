@@ -30,16 +30,16 @@ async function generate() {
   } catch (err) {
     console.warn('Could not fetch DB candidates, using defaults:', err.message);
     candidates = [
-      { id: 'd1', role: 'diac', name: 'André Lucas Ferraz' },
-      { id: 'd2', role: 'diac', name: 'Benedito Alves Nogueira' },
-      { id: 'd3', role: 'diac', name: 'Cícero Monteiro Lima' },
-      { id: 'd4', role: 'diac', name: 'Daniel Bezerra Torres' },
-      { id: 'd5', role: 'diac', name: 'Elias Cavalcanti Souza' },
-      { id: 'd6', role: 'diac', name: 'Fábio Rodrigues Araújo' },
-      { id: 'p1', role: 'presb', name: 'Gilberto Magalhães Silva' },
-      { id: 'p2', role: 'presb', name: 'Hélio Pereira Barbosa' },
-      { id: 'p3', role: 'presb', name: 'Isaías Ferreira Lima' },
-      { id: 'p4', role: 'presb', name: 'Jonas Araújo Bezerra' },
+      { id: 'd1', role: 'diac', name: 'Armando' },
+      { id: 'd2', role: 'diac', name: 'João Dácio' },
+      { id: 'd3', role: 'diac', name: 'Jesus' },
+      { id: 'd4', role: 'diac', name: 'Cícero' },
+      { id: 'd5', role: 'diac', name: 'Hélio' },
+      { id: 'p1', role: 'presb', name: 'Antônio Lopes' },
+      { id: 'p2', role: 'presb', name: 'Reginaldo' },
+      { id: 'p3', role: 'presb', name: 'Emanuel' },
+      { id: 'p4', role: 'presb', name: 'Jonas' },
+      { id: 'p5', role: 'presb', name: 'Cláudio' },
     ];
   }
 

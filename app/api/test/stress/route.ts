@@ -17,19 +17,19 @@ const LAST_NAMES = [
 ];
 
 const DEFAULT_DIAC = [
-  ['d1', 'André Lucas Ferraz', 5],
-  ['d2', 'Benedito Alves Nogueira', 3],
-  ['d3', 'Cícero Monteiro Lima', 4],
-  ['d4', 'Daniel Bezerra Torres', 2],
-  ['d5', 'Elias Cavalcanti Souza', 3.5],
-  ['d6', 'Fábio Rodrigues Araújo', 1.5],
+  ['d1', 'Armando', 3],
+  ['d2', 'João Dácio', 3],
+  ['d3', 'Jesus', 3],
+  ['d4', 'Cícero', 3],
+  ['d5', 'Hélio', 3],
 ];
 
 const DEFAULT_PRESB = [
-  ['p1', 'Gilberto Magalhães Silva', 5],
-  ['p2', 'Hélio Pereira Barbosa', 3],
-  ['p3', 'Isaías Ferreira Lima', 4],
-  ['p4', 'Jonas Araújo Bezerra', 1.5],
+  ['p1', 'Antônio Lopes', 3],
+  ['p2', 'Reginaldo', 3],
+  ['p3', 'Emanuel', 3],
+  ['p4', 'Jonas', 3],
+  ['p5', 'Cláudio', 3],
 ];
 
 function pickWeighted(list: any[], k: number): string[] {
