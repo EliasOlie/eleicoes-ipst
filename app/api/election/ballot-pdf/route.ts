@@ -4,7 +4,12 @@ import { generateBallotPdfBuffer } from '@/lib/ballot-pdf';
 
 export async function GET(req: NextRequest) {
   try {
-    const mode = (req.nextUrl.searchParams.get('mode') as '2-up' | '4-up') || '2-up';
+    const rawMode = req.nextUrl.searchParams.get('mode');
+    const mode = (rawMode === 'presb' || rawMode === 'diac' || rawMode === 'mixed' ? rawMode : 'all') as
+      | 'all'
+      | 'presb'
+      | 'diac'
+      | 'mixed';
 
     // Fetch live candidates and vacancies from DB
     const [cands, config] = await Promise.all([

@@ -2,14 +2,14 @@ import { Member } from '@/types/election';
 
 export const INITIAL_DIAC: [string, string, number][] = [
   ['d1', 'Armando', 3],
-  ['d2', 'João Dácio', 3],
+  ['d2', 'João', 3],
   ['d3', 'Jesus', 3],
   ['d4', 'Cícero', 3],
   ['d5', 'Hélio', 3],
 ];
 
 export const INITIAL_PRESB: [string, string, number][] = [
-  ['p1', 'Antônio Lopes', 3],
+  ['p1', 'Antônio', 3],
   ['p2', 'Reginaldo', 3],
   ['p3', 'Emanuel', 3],
   ['p4', 'Jonas', 3],

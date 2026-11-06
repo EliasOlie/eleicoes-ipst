@@ -31,11 +31,11 @@ async function generate() {
     console.warn('Could not fetch DB candidates, using defaults:', err.message);
     candidates = [
       { id: 'd1', role: 'diac', name: 'Armando' },
-      { id: 'd2', role: 'diac', name: 'João Dácio' },
+      { id: 'd2', role: 'diac', name: 'João' },
       { id: 'd3', role: 'diac', name: 'Jesus' },
       { id: 'd4', role: 'diac', name: 'Cícero' },
       { id: 'd5', role: 'diac', name: 'Hélio' },
-      { id: 'p1', role: 'presb', name: 'Antônio Lopes' },
+      { id: 'p1', role: 'presb', name: 'Antônio' },
       { id: 'p2', role: 'presb', name: 'Reginaldo' },
       { id: 'p3', role: 'presb', name: 'Emanuel' },
       { id: 'p4', role: 'presb', name: 'Jonas' },
@@ -47,11 +47,12 @@ async function generate() {
     candidates,
     vagasDiac,
     vagasPresb,
+    mode: 'all',
   });
 
   const outputPath = path.join(process.cwd(), 'public/cedula-eleicao-ipst-2026.pdf');
   await fs.writeFile(outputPath, pdfBytes);
-  console.log(`✓ 8-up PDF successfully generated at: ${outputPath} (${(pdfBytes.length / 1024).toFixed(1)} KB)`);
+  console.log(`✓ 12-up 2-page PDF (Presbíteros + Diáconos separados) successfully generated at: ${outputPath} (${(pdfBytes.length / 1024).toFixed(1)} KB)`);
 }
 
 generate().catch((err) => {
