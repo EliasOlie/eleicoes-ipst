@@ -8,7 +8,7 @@ const connectionString =
   'postgresql://app_ipst_admin:8xYVEXYMs6WxaDXv0LVe4Wvq@i1-db.eliasolie.com.br:6432/app_ipst?sslmode=disable';
 
 async function generate() {
-  console.log('Generating A4 Landscape Election Ballots PDF (12 per sheet)...');
+  console.log('Generating A4 Landscape Election Ballots PDF (16 per sheet)...');
 
   const sql = postgres(connectionString);
   let candidates = [];
@@ -52,7 +52,7 @@ async function generate() {
 
   const outputPath = path.join(process.cwd(), 'public/cedula-eleicao-ipst-2026.pdf');
   await fs.writeFile(outputPath, pdfBytes);
-  console.log(`✓ 12-up 2-page PDF (Presbíteros + Diáconos separados) successfully generated at: ${outputPath} (${(pdfBytes.length / 1024).toFixed(1)} KB)`);
+  console.log(`✓ 16-up 2-page PDF (Presbíteros + Diáconos separados) successfully generated at: ${outputPath} (${(pdfBytes.length / 1024).toFixed(1)} KB)`);
 }
 
 generate().catch((err) => {

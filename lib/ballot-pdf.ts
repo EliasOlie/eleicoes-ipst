@@ -52,13 +52,13 @@ export async function generateBallotPdfBuffer(options: BallotPdfOptions): Promis
   const borderColor = rgb(0.78, 0.82, 0.79); // #C7D1C9
   const cutLineColor = rgb(0.60, 0.65, 0.62); // Discrete dashed cut lines
 
-  // Grid: 4 columns x 3 rows = 12 ballots per A4 Landscape sheet
+  // Grid: 4 columns x 4 rows = 16 ballots per A4 Landscape sheet
   const COLS = 4;
-  const ROWS = 3;
+  const ROWS = 4;
   const PAGE_W = 841.89;
   const PAGE_H = 595.28;
   const cellW = PAGE_W / COLS; // 210.47 pt (~74.2 mm)
-  const cellH = PAGE_H / ROWS; // 198.42 pt (~70.0 mm)
+  const cellH = PAGE_H / ROWS; // 148.82 pt (~52.5 mm)
 
   function drawSingleBallot(
     page: PDFPage,
@@ -74,7 +74,7 @@ export async function generateBallotPdfBuffer(options: BallotPdfOptions): Promis
     const roleLimit = isPresb ? vagasPresb : vagasDiac;
     const cands = isPresb ? presbList : diacList;
 
-    const margin = 4.5;
+    const margin = 3.5;
     const boxX = originX + margin;
     const boxY = originY + margin;
     const boxW = bWidth - margin * 2;
@@ -94,114 +94,114 @@ export async function generateBallotPdfBuffer(options: BallotPdfOptions): Promis
     // Top decorative accent bar
     page.drawRectangle({
       x: boxX,
-      y: boxY + boxH - 3.5,
+      y: boxY + boxH - 2.5,
       width: boxW,
-      height: 3.5,
+      height: 2.5,
       color: accentColor,
     });
 
-    let curY = boxY + boxH - 7;
-    const padX = boxX + 6.5;
-    const innerW = boxW - 13;
+    let curY = boxY + boxH - 5;
+    const padX = boxX + 6;
+    const innerW = boxW - 12;
 
     // Header with Logo
     if (logoImage) {
       page.drawImage(logoImage, {
         x: padX,
-        y: curY - 18,
-        width: 18,
-        height: 18,
+        y: curY - 14,
+        width: 14,
+        height: 14,
       });
     }
 
-    const headerX = logoImage ? padX + 22 : padX;
+    const headerX = logoImage ? padX + 18 : padX;
 
     page.drawText('IP SERRA TALHADA', {
       x: headerX,
-      y: curY - 4,
-      size: 7.2,
+      y: curY - 3,
+      size: 6.5,
       font: fontBold,
       color: accentColor,
     });
 
     page.drawText('Eleição de Oficiais · 08/11/2026', {
       x: headerX,
-      y: curY - 12,
-      size: 6.2,
+      y: curY - 9.5,
+      size: 5.5,
       font: fontBold,
       color: textDark,
     });
 
-    page.drawText('Cédula Oficial de Votação Presencial', {
+    page.drawText('Cédula Oficial Presencial', {
       x: headerX,
-      y: curY - 19,
-      size: 5.2,
+      y: curY - 15,
+      size: 4.5,
       font: fontRegular,
       color: textMuted,
     });
 
-    curY -= 24;
+    curY -= 18;
 
     // Role Banner
     page.drawRectangle({
       x: padX,
-      y: curY - 12,
+      y: curY - 10,
       width: innerW,
-      height: 12,
+      height: 10,
       color: accentColor,
     });
 
     const bannerText = `CÉDULA DE ${roleTitle} (VOTE EM ATÉ ${roleLimit})`;
     page.drawText(bannerText, {
-      x: padX + 5,
-      y: curY - 9,
-      size: 6.2,
+      x: padX + 4,
+      y: curY - 7.5,
+      size: 5.8,
       font: fontBold,
       color: rgb(1, 1, 1),
     });
 
-    curY -= 15;
+    curY -= 12.5;
 
     // Instruction Banner
     page.drawRectangle({
       x: padX,
-      y: curY - 9.5,
+      y: curY - 7.5,
       width: innerW,
-      height: 9.5,
+      height: 7.5,
       color: rgb(0.96, 0.97, 0.96),
       borderColor: borderColor,
       borderWidth: 0.4,
     });
 
     page.drawText('Marque [X] no quadrado. Voto em branco: deixe vazio.', {
-      x: padX + 4,
-      y: curY - 7,
-      size: 5,
+      x: padX + 3,
+      y: curY - 5.5,
+      size: 4.5,
       font: fontBold,
       color: accentColor,
     });
 
-    curY -= 16;
+    curY -= 10;
 
     // Candidates list (vertical list, full width, 1st names only!)
-    const rowHeight = 15;
+    const rowHeight = 13.5;
     cands.forEach((c) => {
       // Checkbox
       page.drawRectangle({
-        x: padX + 4,
-        y: curY - 10,
-        width: 10,
-        height: 10,
-        borderWidth: 1.2,
+        x: padX + 3,
+        y: curY - 9,
+        width: 8.5,
+        height: 8.5,
+        borderWidth: 1.0,
         borderColor: textDark,
         color: rgb(1, 1, 1),
       });
 
       // 1st Name
       page.drawText(c.displayName, {
-        x: padX + 19,
-        y: curY - 8,
-        size: 8.5,
+        x: padX + 16,
+        y: curY - 7.5,
+        size: 8.0,
         font: fontBold,
         color: textDark,
       });
@@ -211,16 +211,16 @@ export async function generateBallotPdfBuffer(options: BallotPdfOptions): Promis
 
     // Sub-footer
     page.drawLine({
-      start: { x: padX, y: boxY + 10 },
-      end: { x: padX + innerW, y: boxY + 10 },
+      start: { x: padX, y: boxY + 8.5 },
+      end: { x: padX + innerW, y: boxY + 8.5 },
       color: borderColor,
       thickness: 0.5,
     });
 
     page.drawText('Votação Secreta · Assembleia IPST (CI/IPB)', {
-      x: padX + 3,
-      y: boxY + 4,
-      size: 4.8,
+      x: padX + 2,
+      y: boxY + 3,
+      size: 4.2,
       font: fontRegular,
       color: textMuted,
     });
@@ -245,7 +245,7 @@ export async function generateBallotPdfBuffer(options: BallotPdfOptions): Promis
       }
     }
 
-    // 2 Horizontal cutting lines (at r = 1, 2)
+    // 3 Horizontal cutting lines (at r = 1, 2, 3)
     for (let r = 1; r < ROWS; r++) {
       const cutY = r * cellH;
       let x = 0;
@@ -279,7 +279,7 @@ export async function generateBallotPdfBuffer(options: BallotPdfOptions): Promis
       for (let c = 0; c < COLS; c++) {
         const oX = c * cellW;
         const oY = (ROWS - 1 - r) * cellH;
-        // Cols 0, 1 = Presbítero; Cols 2, 3 = Diácono
+        // Cols 0, 1 = Presbítero (8 cédulas); Cols 2, 3 = Diácono (8 cédulas)
         const role = c < 2 ? 'presb' : 'diac';
         drawSingleBallot(page, oX, oY, cellW, cellH, role);
       }
@@ -294,7 +294,7 @@ export async function generateBallotPdfBuffer(options: BallotPdfOptions): Promis
   } else if (mode === 'mixed') {
     renderMixedPage();
   } else {
-    // Default 'all': Page 1 = Presbítero, Page 2 = Diácono
+    // Default 'all': Page 1 = Presbítero (16 cédulas), Page 2 = Diácono (16 cédulas)
     renderPageWithRole('presb');
     renderPageWithRole('diac');
   }
