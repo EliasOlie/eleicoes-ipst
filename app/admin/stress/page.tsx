@@ -29,8 +29,8 @@ export default function AdminStressPage() {
           botCount,
           concurrency,
           checkInRate: 0.90,
-          vagasDiac: 3,
-          vagasPresb: 2,
+          vagasDiac: 5,
+          vagasPresb: 5,
         }),
       });
 

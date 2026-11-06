@@ -9,8 +9,8 @@ export async function GET() {
       voting_open: false,
       published_quorum: 0,
       published_at: '',
-      vagas_diac: 3,
-      vagas_presb: 2,
+      vagas_diac: 5,
+      vagas_presb: 5,
       total_comungantes: 300,
     };
 

@@ -65,8 +65,8 @@ export async function POST(req: NextRequest) {
     const botCount = Math.min(1000, Math.max(10, Number(body.botCount) || 500));
     const concurrency = Math.min(50, Math.max(1, Number(body.concurrency) || 25));
     const checkInRate = Number(body.checkInRate) || 0.90; // ~90% presentes em ata
-    const vagasDiac = Number(body.vagasDiac) || 3;
-    const vagasPresb = Number(body.vagasPresb) || 2;
+    const vagasDiac = Number(body.vagasDiac) || 5;
+    const vagasPresb = Number(body.vagasPresb) || 5;
 
     // --- ETAPA 1: Setup do Cenário no PostgreSQL ---
     // 1. Limpa votos anteriores e reseta membros

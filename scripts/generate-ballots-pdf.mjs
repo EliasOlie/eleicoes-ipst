@@ -12,8 +12,8 @@ async function generate() {
 
   const sql = postgres(connectionString);
   let candidates = [];
-  let vagasDiac = 3;
-  let vagasPresb = 2;
+  let vagasDiac = 5;
+  let vagasPresb = 5;
 
   try {
     const [cands, config] = await Promise.all([
@@ -23,8 +23,8 @@ async function generate() {
 
     candidates = cands.map((c) => ({ id: c.id, role: c.role, name: c.name }));
     if (config[0]) {
-      vagasDiac = config[0].vagas_diac || 3;
-      vagasPresb = config[0].vagas_presb || 2;
+      vagasDiac = config[0].vagas_diac || 5;
+      vagasPresb = config[0].vagas_presb || 5;
     }
     await sql.end();
   } catch (err) {

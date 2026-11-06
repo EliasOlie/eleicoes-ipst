@@ -215,11 +215,11 @@ export function CedulaImpressaoScreen() {
       {/* Main A4 Sheets Area */}
       <main className="w-full flex-1 flex flex-col items-center p-4 sm:p-8 print:p-0">
         {(viewMode === 'all' || viewMode === 'presb') && (
-          <RenderSheet role="presb" title="Folha 1 · Cédulas de Presbítero (Até 2 votos)" />
+          <RenderSheet role="presb" title={`Folha 1 · Cédulas de Presbítero (Até ${vagasPresb} votos)`} />
         )}
 
         {(viewMode === 'all' || viewMode === 'diac') && (
-          <RenderSheet role="diac" title="Folha 2 · Cédulas de Diácono (Até 3 votos)" />
+          <RenderSheet role="diac" title={`Folha 2 · Cédulas de Diácono (Até ${vagasDiac} votos)`} />
         )}
 
         {viewMode === 'mixed' && (

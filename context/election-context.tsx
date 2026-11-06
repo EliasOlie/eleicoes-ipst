@@ -106,8 +106,8 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
   // Config
   const [diac, setDiac] = useState<[string, string, number][]>([]);
   const [presb, setPresb] = useState<[string, string, number][]>([]);
-  const [vd, setVdInternal] = useState(3);
-  const [vp, setVpInternal] = useState(2);
+  const [vd, setVdInternal] = useState(5);
+  const [vp, setVpInternal] = useState(5);
 
   // Members & Check
   const [members, setMembers] = useState<Member[]>([]);
@@ -174,8 +174,8 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
         setVotingOpen(!!data.config.votingOpen);
         setPublished(data.config.published ?? 0);
         setPublishedAt(data.config.publishedAt || '');
-        setVdInternal(data.config.vagasDiac || 3);
-        setVpInternal(data.config.vagasPresb || 2);
+        setVdInternal(data.config.vagasDiac || 5);
+        setVpInternal(data.config.vagasPresb || 5);
         if (data.config.totalComungantes) {
           setTotalComungantes(data.config.totalComungantes);
         }

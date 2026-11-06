@@ -17,8 +17,8 @@ export async function GET(req: NextRequest) {
       sql`SELECT vagas_diac, vagas_presb FROM election_config WHERE id = 1`,
     ]);
 
-    const vagasDiac = config[0]?.vagas_diac || 3;
-    const vagasPresb = config[0]?.vagas_presb || 2;
+    const vagasDiac = config[0]?.vagas_diac || 5;
+    const vagasPresb = config[0]?.vagas_presb || 5;
 
     const candidates = cands.map((c) => ({
       id: c.id,
