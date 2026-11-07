@@ -71,8 +71,9 @@ export async function generateBallotPdfBuffer(options: BallotPdfOptions): Promis
     const isPresb = role === 'presb';
     const accentColor = isPresb ? primaryDark : primaryGreen;
     const roleTitle = isPresb ? 'PRESBÍTERO' : 'DIÁCONO';
-    const roleLimit = isPresb ? vagasPresb : vagasDiac;
     const cands = isPresb ? presbList : diacList;
+    // Limite impresso = menor entre vagas e candidatos (6 vagas e 5 nomes → "até 5")
+    const roleLimit = Math.min(isPresb ? vagasPresb : vagasDiac, cands.length);
 
     const margin = 3.5;
     const boxX = originX + margin;

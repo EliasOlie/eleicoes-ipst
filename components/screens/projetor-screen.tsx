@@ -376,7 +376,7 @@ export function ProjetorScreen({ standalone = false }: { standalone?: boolean })
                     {filled(resDiac)} de {vagasDiac} {isCompleted ? 'preenchidas' : 'com maioria'}
                     {isCompleted && openSeats(resDiac, vagasDiac) > 0 && (
                       <span className="ml-2 font-semibold text-amber-300">
-                        · {openSeats(resDiac, vagasDiac)} sem maioria
+                        · {openSeats(resDiac, vagasDiac)} {openSeats(resDiac, vagasDiac) === 1 ? 'vaga não preenchida' : 'vagas não preenchidas'}
                       </span>
                     )}
                   </span>
@@ -453,7 +453,7 @@ export function ProjetorScreen({ standalone = false }: { standalone?: boolean })
                     {filled(resPresb)} de {vagasPresb} {isCompleted ? 'preenchidas' : 'com maioria'}
                     {isCompleted && openSeats(resPresb, vagasPresb) > 0 && (
                       <span className="ml-2 font-semibold text-amber-300">
-                        · {openSeats(resPresb, vagasPresb)} sem maioria
+                        · {openSeats(resPresb, vagasPresb)} {openSeats(resPresb, vagasPresb) === 1 ? 'vaga não preenchida' : 'vagas não preenchidas'}
                       </span>
                     )}
                   </span>

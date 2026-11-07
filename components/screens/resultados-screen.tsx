@@ -101,7 +101,11 @@ function OfficePanel({
         <span className="text-xs text-[#CFE3D6]">
           {filled} de {vagas} {isFinal ? 'eleitos' : 'com maioria'}
           {isFinal && tied && <span className="ml-1 text-amber-300 font-semibold">· empate — decisão da Mesa</span>}
-          {isFinal && open > 0 && <span className="ml-1 text-amber-300 font-semibold">· {open} sem maioria — novo escrutínio</span>}
+          {isFinal && open > 0 && (
+            <span className="ml-1 text-amber-300 font-semibold">
+              · {open} {open === 1 ? 'vaga não preenchida' : 'vagas não preenchidas'}
+            </span>
+          )}
         </span>
       </header>
       <ol className="divide-y divide-[#EEF1EE]">
@@ -287,7 +291,7 @@ export function ResultadosScreen() {
         </div>
         <p className="text-xs text-[#6B776F] -mt-3">
           A linha vertical em cada barra marca os 50% + 1 das cédulas ({counted > 0 ? majority : '—'} votos). Percentuais calculados
-          sobre o total de cédulas apuradas, incluindo brancas e nulas. Cada membro pode marcar de nenhum até o número de vagas do cargo.
+          sobre o total de cédulas apuradas, incluindo brancas e nulas. Cada membro pode marcar de nenhum até o número de vagas do cargo (limitado ao número de candidatos). Vaga sem candidato com 50% + 1 fica não preenchida.
         </p>
 
         {/* Composição + participação */}

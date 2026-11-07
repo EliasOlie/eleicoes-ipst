@@ -22,8 +22,8 @@ export function VoterBallotScreen({ standalone = false }: { standalone?: boolean
     voteSubmitting,
     diac,
     presb,
-    vd,
-    vp,
+    maxMarksDiac: vd,
+    maxMarksPresb: vp,
   } = useElection();
 
   const firstName = (loggedMember || 'Maria').split(' ')[0];

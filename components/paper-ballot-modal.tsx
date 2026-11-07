@@ -14,8 +14,8 @@ export function PaperBallotModal({
   const {
     diac,
     presb,
-    vagasDiac,
-    vagasPresb,
+    maxMarksDiac: vagasDiac,
+    maxMarksPresb: vagasPresb,
     castPaperVote,
     paperHanded,
     paperCounted,

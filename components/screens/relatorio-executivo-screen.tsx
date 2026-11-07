@@ -38,7 +38,7 @@ export function RelatorioExecutivoScreen({ standalone = false }: { standalone?: 
       <span className="block text-[11px] font-semibold text-[#8A6A12]">
         {tied
           ? `${open} vaga(s) em empate — decisão da Mesa`
-          : `${open} vaga(s) sem candidato com 50%+1 — novo escrutínio`}
+          : `${open} ${open === 1 ? 'vaga não preenchida' : 'vagas não preenchidas'}`}
       </span>
     );
   };

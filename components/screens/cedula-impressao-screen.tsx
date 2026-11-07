@@ -8,7 +8,8 @@ import Link from 'next/link';
 type BallotViewMode = 'all' | 'presb' | 'diac' | 'mixed';
 
 export function CedulaImpressaoScreen() {
-  const { diac, presb, vagasDiac, vagasPresb } = useElection();
+  // Limite impresso = menor entre vagas e candidatos (não faz sentido "até 6" com 5 nomes)
+  const { diac, presb, maxMarksDiac: vagasDiac, maxMarksPresb: vagasPresb } = useElection();
   const [viewMode, setViewMode] = useState<BallotViewMode>('all');
 
   const handlePrint = () => {

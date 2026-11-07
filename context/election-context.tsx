@@ -35,6 +35,9 @@ interface ElectionContextType {
   vp: number;
   vagasDiac: number;
   vagasPresb: number;
+  /** Máximo de marcações por cédula = menor entre vagas e candidatos do cargo */
+  maxMarksDiac: number;
+  maxMarksPresb: number;
   setVd: (val: number | ((prev: number) => number)) => void;
   setVp: (val: number | ((prev: number) => number)) => void;
   setTotalComungantes: (val: number | ((prev: number) => number)) => void;
@@ -704,7 +707,9 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
   const toggleCandidateSelection = useCallback(
     (id: string) => {
       const isDiac = ballotTab === 'diac';
-      const limit = isDiac ? vd : vp;
+      const limit = isDiac
+        ? diac.length ? Math.min(vd, diac.length) : vd
+        : presb.length ? Math.min(vp, presb.length) : vp;
       const currentList = isDiac ? selection.diac : selection.presb;
       const isSelected = currentList.includes(id);
 
@@ -717,7 +722,7 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
           : [...prev[ballotTab], id],
       }));
     },
-    [ballotTab, vd, vp, selection]
+    [ballotTab, vd, vp, selection, diac.length, presb.length]
   );
 
   // Cast vote e2e with Postgres & Redis
@@ -842,6 +847,10 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
     vp,
     vagasDiac: vd,
     vagasPresb: vp,
+    // Ex.: 6 vagas e 5 candidatos → a cédula diz "até 5" (a 6ª vaga fica não preenchida)
+    // (lista ainda vazia = carregando → usa as vagas para não exibir "até 0")
+    maxMarksDiac: diac.length ? Math.min(vd, diac.length) : vd,
+    maxMarksPresb: presb.length ? Math.min(vp, presb.length) : vp,
     setVd,
     setVp,
     setTotalComungantes: setTotalComungantesServer,
