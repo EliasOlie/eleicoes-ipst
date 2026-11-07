@@ -68,8 +68,13 @@ export function getInitials(name: string): string {
 }
 
 export function maskPhone(v: string): string {
-  const d = v.replace(/\D/g, '').slice(0, 11);
+  let digits = v.replace(/\D/g, '');
+  // Colado/autopreenchido com código do país: "+55 87 9..." → remove o 55
+  if (digits.length > 11 && digits.startsWith('55')) digits = digits.slice(2);
+  const d = digits.slice(0, 11);
   if (d.length <= 2) return d ? `(${d}` : '';
+  // Fixo (10 dígitos, não começa com 9): (87) 3831-1234
+  if (d.length === 10 && d[2] !== '9') return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
   if (d.length <= 3) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
   if (d.length <= 7) return `(${d.slice(0, 2)}) ${d[2]} ${d.slice(3)}`;
   return `(${d.slice(0, 2)}) ${d[2]} ${d.slice(3, 7)}-${d.slice(7)}`;

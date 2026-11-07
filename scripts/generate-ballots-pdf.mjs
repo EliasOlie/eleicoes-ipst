@@ -3,9 +3,11 @@ import path from 'path';
 import postgres from 'postgres';
 import { generateBallotPdfBuffer } from '../lib/ballot-pdf.ts';
 
-const connectionString =
-  process.env.DATABASE_URL ||
-  'postgresql://app_ipst_admin:8xYVEXYMs6WxaDXv0LVe4Wvq@i1-db.eliasolie.com.br:6432/app_ipst?sslmode=disable';
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  console.error('❌ Defina DATABASE_URL no ambiente.');
+  process.exit(1);
+}
 
 async function generate() {
   console.log('Generating A4 Landscape Election Ballots PDF (16 per sheet)...');

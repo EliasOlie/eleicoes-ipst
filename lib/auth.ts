@@ -2,8 +2,20 @@ import crypto from 'crypto';
 import { cookies } from 'next/headers';
 
 const SALT = 'ipst_salt_2026';
-const SECRET = process.env.SESSION_SECRET || 'ipst_super_secret_election_key_2026_conselho_mesa';
 export const COOKIE_NAME = 'ipst_admin_session';
+
+/**
+ * Segredo que assina o cookie da Mesa. Obrigatório e sem valor padrão: com o
+ * código público, um segredo conhecido permitiria forjar o login de admin.
+ * Gere com: openssl rand -base64 48
+ */
+function getSecret(): string {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error('SESSION_SECRET ausente ou curta (mínimo 32 caracteres).');
+  }
+  return secret;
+}
 
 export function hashPassword(password: string): string {
   return crypto.pbkdf2Sync(password, SALT, 10000, 64, 'sha512').toString('hex');
@@ -26,7 +38,7 @@ export function createSessionToken(data: Omit<SessionData, 'exp'>): string {
   const exp = Date.now() + 1000 * 60 * 60 * 24 * 7; // 7 days
   const payload: SessionData = { ...data, exp };
   const encoded = Buffer.from(JSON.stringify(payload)).toString('base64url');
-  const signature = crypto.createHmac('sha256', SECRET).update(encoded).digest('base64url');
+  const signature = crypto.createHmac('sha256', getSecret()).update(encoded).digest('base64url');
   return `${encoded}.${signature}`;
 }
 
@@ -36,11 +48,16 @@ export function verifySessionToken(token: string): SessionData | null {
     if (!encoded || !signature) return null;
 
     const expectedSignature = crypto
-      .createHmac('sha256', SECRET)
+      .createHmac('sha256', getSecret())
       .update(encoded)
       .digest('base64url');
 
-    if (signature !== expectedSignature) return null;
+    if (
+      signature.length !== expectedSignature.length ||
+      !crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))
+    ) {
+      return null;
+    }
 
     const payload: SessionData = JSON.parse(Buffer.from(encoded, 'base64url').toString('utf8'));
     if (Date.now() > payload.exp) return null;

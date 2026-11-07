@@ -1,16 +1,12 @@
 import { NextResponse } from 'next/server';
-import { COOKIE_NAME, getAdminSession } from '@/lib/auth';
-
-export async function POST() {
-  const res = NextResponse.json({ success: true });
-  res.cookies.delete(COOKIE_NAME);
-  return res;
-}
+import { getAdminSession } from '@/lib/auth';
+import { isStressTestEnabled } from '@/lib/election-rules';
 
 export async function GET() {
   const session = await getAdminSession();
+  const features = { stressTest: isStressTestEnabled() };
   if (!session) {
-    return NextResponse.json({ authenticated: false });
+    return NextResponse.json({ authenticated: false, features });
   }
-  return NextResponse.json({ authenticated: true, admin: session });
+  return NextResponse.json({ authenticated: true, admin: session, features });
 }

@@ -13,12 +13,8 @@ export async function GET(req: NextRequest) {
   const cleanup = async () => {
     if (isClosed) return;
     isClosed = true;
-    try {
-      await subscriber.unsubscribe(REDIS_CHANNEL);
-      await subscriber.quit();
-    } catch (e) {
-      // Ignored
-    }
+    // disconnect() não espera o Redis responder (quit() travaria com o Redis fora)
+    subscriber.disconnect();
     try {
       await writer.close();
     } catch (e) {
@@ -38,15 +34,24 @@ export async function GET(req: NextRequest) {
     }
   });
 
-  // Subscribe and send initial ping
+  // Subscribe and send initial ping. Se o Redis não responder em 5s, fecha o
+  // stream: o navegador entra em erro/reconexão e o cliente usa o polling de reserva.
+  const subscribeTimeout = setTimeout(() => {
+    console.error('SSE: Redis indisponível, encerrando stream');
+    cleanup();
+  }, 5000);
+
   subscriber
     .subscribe(REDIS_CHANNEL)
     .then(async () => {
+      clearTimeout(subscribeTimeout);
+      if (isClosed) return;
       await writer.write(
         encoder.encode(`data: ${JSON.stringify({ type: 'CONNECTED', time: Date.now() })}\n\n`)
       );
     })
     .catch((err) => {
+      clearTimeout(subscribeTimeout);
       console.error('SSE Redis subscribe error:', err);
       cleanup();
     });

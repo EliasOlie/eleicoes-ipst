@@ -17,6 +17,13 @@ const args = process.argv.slice(2).reduce((acc, arg) => {
 const TARGET = args.target || 'http://localhost:3000';
 const BOTS = parseInt(args.bots || '500', 10);
 const CONCURRENCY = parseInt(args.concurrency || '25', 10);
+// A chave vem do ambiente (mesmo valor de STRESS_ADMIN_KEY no servidor, que
+// também precisa de ENABLE_STRESS_TEST=true).
+const ADMIN_KEY = process.env.STRESS_ADMIN_KEY;
+if (!ADMIN_KEY) {
+  console.error('❌ Defina STRESS_ADMIN_KEY no ambiente para rodar o stress test.');
+  process.exit(1);
+}
 
 console.log('\n======================================================');
 console.log('🏛️  ELEIÇÕES IPB SERRA TALHADA — E2E STRESS TEST');
@@ -48,7 +55,7 @@ async function run() {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-admin-key': 'ipst2026',
+      'x-admin-key': ADMIN_KEY,
     },
     body: JSON.stringify({
       botCount: BOTS,

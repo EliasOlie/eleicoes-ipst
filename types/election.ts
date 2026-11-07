@@ -9,6 +9,8 @@ export interface Member {
   name: string;
   phone: string;
   time: string;
+  hasVoted?: boolean;
+  votedOnPaper?: boolean;
 }
 
 export interface CandidateResult {
@@ -19,6 +21,10 @@ export interface CandidateResult {
   width: string;
   pct: string;
   elected: boolean;
+  /** Empatado na última vaga — decisão da Mesa */
+  tied?: boolean;
+  /** Seria eleito, mas a apuração ainda não terminou */
+  provisional?: boolean;
   reachedMajority?: boolean;
   bar: string;
   sit: string;

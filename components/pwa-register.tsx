@@ -12,13 +12,13 @@ export function PwaRegister() {
   useEffect(() => {
     // 1. Register Service Worker
     if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker
-          .register('/sw.js')
-          .catch((err) => {
-            console.warn('PWA Service Worker registration failed:', err);
-          });
-      });
+      const register = () =>
+        navigator.serviceWorker.register('/sw.js').catch((err) => {
+          console.warn('PWA Service Worker registration failed:', err);
+        });
+      // Se o "load" já aconteceu antes da hidratação, registra direto
+      if (document.readyState === 'complete') register();
+      else window.addEventListener('load', register, { once: true });
     }
 
     // 2. Listen for install prompt - show at most ONCE

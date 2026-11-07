@@ -11,6 +11,8 @@ export function RelatorioExecutivoScreen({ standalone = false }: { standalone?: 
     counted,
     majority,
     blanks,
+    nulls,
+    isCompleted,
     resDiac,
     resPresb,
     vagasDiac,
@@ -23,7 +25,23 @@ export function RelatorioExecutivoScreen({ standalone = false }: { standalone?: 
     quorumMinimo,
     adminUser,
     logoutAdmin,
+    features,
   } = useElection();
+
+  // Vagas que ficaram sem candidato com 50%+1 (ou em empate) — exigem nova decisão da Mesa
+  const seatsNote = (res: typeof resDiac, vagas: number) => {
+    if (!isCompleted) return null;
+    const tied = res.some((c) => c.tied);
+    const open = vagas - res.filter((c) => c.elected).length;
+    if (open <= 0) return null;
+    return (
+      <span className="block text-[11px] font-semibold text-[#8A6A12]">
+        {tied
+          ? `${open} vaga(s) em empate — decisão da Mesa`
+          : `${open} vaga(s) sem candidato com 50%+1 — novo escrutínio`}
+      </span>
+    );
+  };
 
   const handlePrint = () => {
     if (typeof window !== 'undefined') {
@@ -91,16 +109,25 @@ export function RelatorioExecutivoScreen({ standalone = false }: { standalone?: 
         </div>
         <div className="p-4 rounded-xl bg-[#F6F8F5] border border-[#DCE3DE] text-sm leading-relaxed text-[#33433A] flex flex-wrap gap-x-6 gap-y-2">
           <span>
-            Cédulas apuradas: <strong className="font-bold text-[#15201A]">{counted}</strong> de {published}
+            Cédulas apuradas: <strong className="font-bold text-[#15201A]">{counted}</strong> ({published} aptos na ata)
           </span>
           <span>·</span>
           <span>
-            Referência de maioria: <strong className="font-bold text-[#15201A]">{majority} votos</strong> ({majority > 1 ? `mais de 50% dos ${published} da ata` : '50% + 1'})
+            Para ser eleito: <strong className="font-bold text-[#15201A]">{counted > 0 ? majority : '—'} votos</strong> (50% + 1 das {counted} cédulas, brancas e nulas incluídas)
           </span>
           <span>·</span>
           <span>
-            Votos em branco: <strong className="font-bold text-[#15201A]">{blanks}</strong>
+            Brancos: <strong className="font-bold text-[#15201A]">{blanks}</strong>
           </span>
+          <span>·</span>
+          <span>
+            Nulos: <strong className="font-bold text-[#15201A]">{nulls}</strong>
+          </span>
+          {!isCompleted && (
+            <span className="w-full text-xs font-semibold text-[#8A6A12]">
+              Resultado provisório: a apuração só é definitiva com a votação encerrada e todas as cédulas de papel entregues apuradas.
+            </span>
+          )}
         </div>
       </div>
 
@@ -115,13 +142,14 @@ export function RelatorioExecutivoScreen({ standalone = false }: { standalone?: 
           </div>
           <span className="text-xs sm:text-sm text-[#6B776F]">
             {resDiac.filter((c) => c.elected).length} de {vagasDiac} eleitos
+            {seatsNote(resDiac, vagasDiac)}
           </span>
         </div>
 
         <div className="grid grid-cols-[1fr_80px_100px_120px] text-xs font-bold text-[#6B776F] py-2 border-b border-[#CBD5CE]">
           <span>Candidato</span>
           <span className="text-right">Votos</span>
-          <span className="text-right">% presentes</span>
+          <span className="text-right">% cédulas</span>
           <span className="text-right">Situação</span>
         </div>
 
@@ -169,13 +197,14 @@ export function RelatorioExecutivoScreen({ standalone = false }: { standalone?: 
           </div>
           <span className="text-xs sm:text-sm text-[#6B776F]">
             {resPresb.filter((c) => c.elected).length} de {vagasPresb} eleitos
+            {seatsNote(resPresb, vagasPresb)}
           </span>
         </div>
 
         <div className="grid grid-cols-[1fr_80px_100px_120px] text-xs font-bold text-[#6B776F] py-2 border-b border-[#CBD5CE]">
           <span>Candidato</span>
           <span className="text-right">Votos</span>
-          <span className="text-right">% presentes</span>
+          <span className="text-right">% cédulas</span>
           <span className="text-right">Situação</span>
         </div>
 
@@ -285,18 +314,26 @@ export function RelatorioExecutivoScreen({ standalone = false }: { standalone?: 
                 Relatório executivo
               </div>
               <Link
+                href="/relatorios"
+                className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/10 transition-colors"
+              >
+                Resultados e gráficos
+              </Link>
+              <Link
                 href="/cedula"
                 className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/10 transition-colors flex items-center justify-between"
               >
                 <span>Cédulas para impressão</span>
                 <span className="text-[10px] bg-white/15 px-1.5 py-0.5 rounded text-white font-mono">PDF</span>
               </Link>
-              <Link
-                href="/admin/stress"
-                className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/10 transition-colors"
-              >
-                Stress Test (Bots)
-              </Link>
+              {features.stressTest && (
+                <Link
+                  href="/admin/stress"
+                  className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/10 transition-colors"
+                >
+                  Stress Test (Bots)
+                </Link>
+              )}
             </nav>
           </div>
 

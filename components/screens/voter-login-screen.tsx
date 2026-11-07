@@ -17,7 +17,7 @@ export function VoterLoginScreen({ standalone = false }: { standalone?: boolean 
     loginError,
   } = useElection();
 
-  const isValid = voterName.trim().length > 2 && voterPhone.length >= 15;
+  const isValid = voterName.trim().length > 2 && voterPhone.replace(/\D/g, '').length >= 10;
   const loginOpacity = isValid && !loginLoading ? 1 : 0.55;
   const loginLabel = loginLoading
     ? 'Registrando presença...'
@@ -93,6 +93,8 @@ export function VoterLoginScreen({ standalone = false }: { standalone?: boolean 
             <input
               type="text"
               value={voterName}
+              maxLength={150}
+              autoComplete="name"
               onChange={(e) => setVoterName(e.target.value)}
               placeholder="Como consta no rol de membros"
               className="h-12 rounded-xl border border-[#CBD5CE] px-4 text-sm bg-white text-[#15201A] focus:outline-none focus:ring-2 focus:ring-[#0A5C36]"

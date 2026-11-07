@@ -23,6 +23,9 @@ export function AdminCandidatosScreen({ standalone = false }: { standalone?: boo
     votingOpen,
     adminUser,
     logoutAdmin,
+    features,
+    actionError,
+    clearActionError,
   } = useElection();
 
   const [newDiacName, setNewDiacName] = useState('');
@@ -53,6 +56,20 @@ export function AdminCandidatosScreen({ standalone = false }: { standalone?: boo
           Defina o número de vagas e a lista de oficiais indicados para a eleição
         </span>
       </div>
+
+      {!adminUser && (
+        <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-800">
+          <strong>Somente leitura:</strong> entre com a senha para alterar candidatos e vagas.{' '}
+          <Link href="/admin/login" className="underline font-semibold">Entrar</Link>
+        </div>
+      )}
+
+      {actionError && (
+        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-sm text-red-700 font-semibold flex justify-between gap-3">
+          <span>{actionError}</span>
+          <button onClick={clearActionError} className="cursor-pointer text-red-500">✕</button>
+        </div>
+      )}
 
       {votingOpen && (
         <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-800 flex items-center gap-2">
@@ -298,6 +315,18 @@ export function AdminCandidatosScreen({ standalone = false }: { standalone?: boo
                 Conferência de ata
               </Link>
               <Link
+                href="/relatorios"
+                className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/10 transition-colors"
+              >
+                Resultados e gráficos
+              </Link>
+              <Link
+                href="/boas-vindas"
+                className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/10 transition-colors"
+              >
+                Boas-vindas (Telão)
+              </Link>
+              <Link
                 href="/projetor"
                 className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/10 transition-colors"
               >
@@ -316,12 +345,14 @@ export function AdminCandidatosScreen({ standalone = false }: { standalone?: boo
                 <span>Cédulas para impressão</span>
                 <span className="text-[10px] bg-white/15 px-1.5 py-0.5 rounded text-white font-mono">PDF</span>
               </Link>
-              <Link
-                href="/admin/stress"
-                className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/10 transition-colors"
-              >
-                Stress Test (Bots)
-              </Link>
+              {features.stressTest && (
+                <Link
+                  href="/admin/stress"
+                  className="p-3 px-3.5 rounded-xl text-sm text-[#CFE3D6] hover:bg-white/10 transition-colors"
+                >
+                  Stress Test (Bots)
+                </Link>
+              )}
             </nav>
           </div>
 

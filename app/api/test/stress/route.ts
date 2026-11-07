@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { publishElectionEvent } from '@/lib/redis';
 import { getAdminSession } from '@/lib/auth';
+import { isStressTestEnabled } from '@/lib/election-rules';
+import crypto from 'crypto';
 
 const FIRST_NAMES = [
   'Maria', 'José', 'Ana', 'João', 'Francisca', 'Antônio', 'Josefa', 'Paulo',
@@ -54,10 +56,21 @@ export const maxDuration = 60;
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
 
+  // Feature flag: desligada por padrão. Sem ENABLE_STRESS_TEST=true a rota não existe.
+  if (!isStressTestEnabled()) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
+
   try {
     const session = await getAdminSession();
-    const adminKey = req.headers.get('x-admin-key');
-    if (!session && adminKey !== 'ipst2026') {
+    // Acesso por chave (CLI) só se STRESS_ADMIN_KEY estiver definida no ambiente.
+    const expectedKey = process.env.STRESS_ADMIN_KEY || '';
+    const providedKey = req.headers.get('x-admin-key') || '';
+    const keyOk =
+      expectedKey.length >= 16 &&
+      providedKey.length === expectedKey.length &&
+      crypto.timingSafeEqual(Buffer.from(providedKey), Buffer.from(expectedKey));
+    if (!session && !keyOk) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
@@ -189,7 +202,7 @@ export async function POST(req: NextRequest) {
           await sql.begin(async (tx) => {
             await tx`
               UPDATE members
-              SET has_voted = true, voted_at = NOW()
+              SET has_voted = true
               WHERE id = ${m.id}
             `;
             const vInsert = await tx`

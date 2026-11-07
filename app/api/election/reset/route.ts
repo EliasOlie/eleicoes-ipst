@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
 import { getAdminSession } from '@/lib/auth';
 import { publishElectionEvent } from '@/lib/redis';
+import { ensureSchema } from '@/lib/election-rules';
 
 export async function POST() {
   try {
@@ -11,10 +12,11 @@ export async function POST() {
     }
 
     // Reset votes and mark members has_voted = false
+    await ensureSchema(sql);
     await sql.begin(async (tx) => {
       await tx`DELETE FROM vote_candidates`;
       await tx`DELETE FROM votes`;
-      await tx`UPDATE members SET has_voted = false, voted_at = NULL`;
+      await tx`UPDATE members SET has_voted = false, voted_on_paper = false, voted_at = NULL`;
     });
 
     const candidates = await sql`SELECT id FROM candidates WHERE active = true`;
@@ -28,6 +30,7 @@ export async function POST() {
       receipt: 'RESET',
       counted: 0,
       blanks: 0,
+      nulls: 0,
       tally: emptyTally,
     });
 

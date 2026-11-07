@@ -1,9 +1,11 @@
 import postgres from 'postgres';
 import Redis from 'ioredis';
 
-const connectionString =
-  process.env.DATABASE_URL ||
-  'postgresql://app_ipst_admin:8xYVEXYMs6WxaDXv0LVe4Wvq@i1-db.eliasolie.com.br:6432/app_ipst?sslmode=disable';
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  console.error('❌ Defina DATABASE_URL no ambiente.');
+  process.exit(1);
+}
 
 const sql = postgres(connectionString);
 
@@ -41,7 +43,8 @@ async function clean() {
 
   // Notify redis if accessible
   try {
-    const redis = new Redis('redis://app_ipst:MYS4oA1YIUO7aXS9KKWifBK4@vpsql.eliasolie.com.br:6380', {
+    if (!process.env.REDIS_URL) throw new Error('REDIS_URL não definida — evento não publicado');
+    const redis = new Redis(process.env.REDIS_URL, {
       maxRetriesPerRequest: 1,
       connectTimeout: 3000,
     });

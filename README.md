@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Eleição de Oficiais 2026 — IPST
 
-## Getting Started
+Sistema de votação usado na Assembleia Geral Extraordinária da **Igreja Presbiteriana de Serra Talhada**
+(08/11/2026) para a eleição de diáconos e presbíteros.
 
-First, run the development server:
+> **Código aberto apenas para auditoria.** Leia a [LICENSE](LICENSE): é permitido ler e executar
+> localmente para verificar o funcionamento; não é permitido usar, replicar, modificar ou vender.
+
+## Onde estão as regras da eleição
+
+| Regra | Arquivo |
+|---|---|
+| Identificação do membro (nome **e** telefone), cadastro | `app/api/election/member/register/route.ts` |
+| Voto pelo celular: liberação, conferência, 1 voto por membro, limite de vagas | `app/api/election/vote/route.ts` |
+| Validação da cédula (vagas, repetidos, cargo) e normalização de nome/telefone | `lib/election-rules.ts` |
+| Cédula de papel: entrega pela Mesa e escrutínio (apuradas ≤ entregues) | `app/api/election/mesa/paper-handout/route.ts`, `app/api/election/vote/paper/route.ts` |
+| Conferência da ata e quórum | `app/api/election/mesa/*` |
+| Apuração, eleitos (maioria simples), empate | `context/election-context.tsx` (`computeResults`) |
+| O que fica gravado (sigilo do voto) | `db/init.mjs` — tabela `votes` não tem nenhuma referência ao membro |
+
+## Rodar localmente (auditoria)
+
+Requisitos: Node 20+, pnpm, Docker.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+docker run -d --name ipst-pg -e POSTGRES_USER=ipst -e POSTGRES_PASSWORD=ipst -e POSTGRES_DB=app_ipst -p 5440:5432 postgres:16-alpine
+docker run -d --name ipst-redis -p 6390:6379 redis:7-alpine
+cp .env.example .env.local   # preencha com os endereços locais acima e um SESSION_SECRET aleatório
+pnpm install
+pnpm db:init                 # exige ADMIN_INITIAL_PASSWORD no ambiente
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Variáveis de ambiente
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Nenhuma credencial fica no código. Veja `.env.example`:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `DATABASE_URL`, `REDIS_URL` — conexões.
+- `SESSION_SECRET` — assina o login da Mesa (mínimo 32 caracteres; `openssl rand -base64 48`).
+- `ADMIN_INITIAL_PASSWORD` — só para o `db:init` criar o primeiro admin.
+- `ENABLE_STRESS_TEST` / `STRESS_ADMIN_KEY` — simulação de carga, **desligada por padrão** (apaga dados).
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Para trocar a senha da Mesa: `NEW_ADMIN_PASSWORD='...' pnpm admin:password`.

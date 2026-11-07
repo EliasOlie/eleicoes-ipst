@@ -1,9 +1,11 @@
 import postgres from 'postgres';
 import crypto from 'crypto';
 
-const connectionString =
-  process.env.DATABASE_URL ||
-  'postgresql://app_ipst_admin:8xYVEXYMs6WxaDXv0LVe4Wvq@i1-db.eliasolie.com.br:6432/app_ipst?sslmode=disable';
+const connectionString = process.env.DATABASE_URL;
+if (!connectionString) {
+  console.error('❌ Defina DATABASE_URL no ambiente.');
+  process.exit(1);
+}
 
 const sql = postgres(connectionString);
 
@@ -69,6 +71,7 @@ async function migrate() {
       voted_at TIMESTAMPTZ
     );
   `;
+  await sql`ALTER TABLE members ADD COLUMN IF NOT EXISTS voted_on_paper BOOLEAN NOT NULL DEFAULT FALSE`;
   console.log('✓ members table ready');
 
   // 5. Secret Ballots / Votes Table
@@ -77,9 +80,11 @@ async function migrate() {
       id SERIAL PRIMARY KEY,
       receipt VARCHAR(20) UNIQUE NOT NULL,
       is_blank BOOLEAN DEFAULT FALSE,
-      created_at TIMESTAMPTZ DEFAULT NOW()
+      created_at TIMESTAMPTZ -- sigilo: nunca preenchido (horário permitiria ligar cédula a membro)
     );
   `;
+  await sql`ALTER TABLE votes ADD COLUMN IF NOT EXISTS is_null BOOLEAN NOT NULL DEFAULT FALSE`;
+  await sql`ALTER TABLE votes ALTER COLUMN created_at DROP DEFAULT`;
   console.log('✓ votes table ready');
 
   // 6. Vote Candidates Table
@@ -95,12 +100,18 @@ async function migrate() {
   // Seed default admin if not exists
   const adminExists = await sql`SELECT id FROM admins WHERE username = 'admin'`;
   if (adminExists.length === 0) {
-    const defaultHash = hashPassword('ipst2026');
+    // Sem senha padrão no código (repositório público)
+    const initialPassword = process.env.ADMIN_INITIAL_PASSWORD;
+    if (!initialPassword || initialPassword.length < 10) {
+      console.error('❌ Defina ADMIN_INITIAL_PASSWORD (mínimo 10 caracteres) para criar o admin.');
+      await sql.end();
+      process.exit(1);
+    }
     await sql`
       INSERT INTO admins (username, password_hash, name, role)
-      VALUES ('admin', ${defaultHash}, 'Conselho da Igreja', 'admin')
+      VALUES ('admin', ${hashPassword(initialPassword)}, 'Conselho da Igreja', 'admin')
     `;
-    console.log('✓ Seeded default admin: admin / ipst2026');
+    console.log('✓ Admin "admin" criado com a senha de ADMIN_INITIAL_PASSWORD');
   }
 
   // Ensure election_config exists

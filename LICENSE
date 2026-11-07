@@ -1,0 +1,47 @@
+LICENÇA DE CÓDIGO-FONTE PARA AUDITORIA
+Sistema de Votação — Eleição de Oficiais da Igreja Presbiteriana de Serra Talhada
+
+Copyright (c) 2026 Elias Oliveira. Todos os direitos reservados.
+
+1. OBJETO
+   Este código-fonte é disponibilizado publicamente com a ÚNICA finalidade de
+   permitir que membros da igreja, oficiais, o Conselho e quaisquer interessados
+   AUDITEM o funcionamento do sistema de votação — isto é, leiam o código e
+   verifiquem como as regras da eleição são aplicadas.
+
+2. O QUE É PERMITIDO
+   a) Ler, examinar e analisar o código-fonte e seu histórico de versões;
+   b) Executar o código localmente, em ambiente de teste próprio, EXCLUSIVAMENTE
+      para verificar o seu funcionamento no contexto de uma auditoria;
+   c) Citar trechos curtos do código em relatórios, pareceres ou comunicações
+      sobre a auditoria, com indicação da fonte.
+
+3. O QUE NÃO É PERMITIDO (sem autorização prévia e por escrito do titular)
+   a) Usar o código, no todo ou em parte, para conduzir votações, eleições,
+      assembleias ou qualquer outra finalidade real, pessoal ou comercial;
+   b) Copiar, reproduzir, replicar ou redistribuir o código, no todo ou em
+      parte, inclusive em outros repositórios ou produtos;
+   c) Modificar, adaptar, traduzir ou criar obras derivadas;
+   d) Vender, licenciar, sublicenciar, alugar ou de qualquer forma explorar
+      comercialmente o código ou obras derivadas;
+   e) Remover ou alterar este aviso de licença e de direitos autorais.
+
+4. MARCAS E IDENTIDADE VISUAL
+   O nome, a logomarca e a identidade visual da Igreja Presbiteriana de Serra
+   Talhada pertencem à igreja e não são licenciados por este documento.
+
+5. CONTRIBUIÇÕES
+   Relatos de problemas e sugestões feitos no contexto da auditoria são bem-vindos
+   e não conferem ao autor do relato qualquer direito sobre o código.
+
+6. AUSÊNCIA DE GARANTIA
+   O código é fornecido "no estado em que se encontra", sem garantias de qualquer
+   tipo. O titular não se responsabiliza por danos decorrentes do uso em
+   desacordo com esta licença.
+
+7. LEGISLAÇÃO
+   Esta licença é regida pelas leis da República Federativa do Brasil, em
+   especial a Lei nº 9.610/1998 (Direitos Autorais) e a Lei nº 9.609/1998
+   (Software).
+
+Pedidos de autorização: Elias Oliveira.

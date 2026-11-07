@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useElection } from '@/context/election-context';
 import { PaperBallotModal } from '@/components/paper-ballot-modal';
 import { FileText, UserPlus, X, CheckCircle2, Edit3 } from 'lucide-react';
@@ -27,6 +27,14 @@ export function MesaAtaScreen({ standalone = false }: { standalone?: boolean }) 
     totalComungantes,
     setTotalComungantes,
     quorumAtingido,
+    authChecked,
+    actionError,
+    clearActionError,
+    members,
+    refreshState,
+    markPaperHanded,
+    paperHanded,
+    paperCounted,
   } = useElection();
 
   const [showPaperModal, setShowPaperModal] = useState(false);
@@ -36,11 +44,23 @@ export function MesaAtaScreen({ standalone = false }: { standalone?: boolean }) 
   const [manualName, setManualName] = useState('');
   const [manualPhone, setManualPhone] = useState('');
   const [addingMember, setAddingMember] = useState(false);
+  const [addError, setAddError] = useState('');
+
+  // Nomes iguais (sem acento/espaços) aparecem em destaque: pode ser a mesma pessoa
+  // cadastrada com telefones diferentes — confira no livro antes de marcar.
+  const duplicateNames = useMemo(() => {
+    const norm = (s: string) =>
+      s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+    const counts = new Map<string, number>();
+    members.forEach((m) => counts.set(norm(m.name), (counts.get(norm(m.name)) || 0) + 1));
+    return new Set(members.filter((m) => (counts.get(norm(m.name)) || 0) > 1).map((m) => m.id));
+  }, [members]);
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!manualName.trim() || addingMember) return;
     setAddingMember(true);
+    setAddError('');
     try {
       const res = await fetch('/api/election/mesa/add-member', {
         method: 'POST',
@@ -51,13 +71,76 @@ export function MesaAtaScreen({ standalone = false }: { standalone?: boolean }) 
         setManualName('');
         setManualPhone('');
         setShowAddModal(false);
+        refreshState();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setAddError(
+          res.status === 401
+            ? 'Sessão expirada. Entre novamente.'
+            : data.error || 'Não foi possível cadastrar.'
+        );
       }
     } catch {
-      // Ignored
+      setAddError('Falha de conexão: o membro NÃO foi cadastrado.');
     } finally {
       setAddingMember(false);
     }
   };
+
+  const handlePublish = () => {
+    const msg = votingOpen
+      ? `Reenviar o quórum com ${confirmedCount} membros conferidos?`
+      : `Liberar a votação agora com ${confirmedCount} membros conferidos na ata?`;
+    if (window.confirm(msg)) publishQuorum();
+  };
+
+  const handlePaperHandout = (id: number, name: string) => {
+    if (
+      window.confirm(
+        `Entregar cédula de PAPEL para ${name}?\n\nA partir de agora este membro consta como "já votou" e NÃO conseguirá votar pelo celular.`
+      )
+    ) {
+      markPaperHanded(id);
+    }
+  };
+
+  const handleRelock = () => {
+    if (window.confirm('Bloquear a votação? Ninguém conseguirá votar pelo celular até liberar de novo.')) {
+      relockVoting();
+    }
+  };
+
+  // A Mesa só funciona autenticada: sem login não mostra nomes/telefones nem
+  // deixa "conferir" algo que o servidor recusaria.
+  if (!authChecked || !isAdminAuthenticated) {
+    return (
+      <div className={`flex flex-col gap-3.5 ${standalone ? 'w-full max-w-[480px] mx-auto px-4' : 'w-[390px]'}`}>
+        <div className="w-full bg-[#FBFCFA] rounded-3xl shadow-xl border border-[#DCE3DE] overflow-hidden flex flex-col">
+          <div className="bg-[#073D24] text-white p-6 pt-10 flex flex-col gap-1">
+            <div className="text-[13px] text-[#CFE3D6]">Mesa · Secretário</div>
+            <div className="font-serif text-2xl font-semibold">Conferência de ata</div>
+          </div>
+          <div className="p-7 flex flex-col gap-4 items-center text-center">
+            {!authChecked ? (
+              <span className="text-sm text-[#6B776F]">Verificando sessão...</span>
+            ) : (
+              <>
+                <span className="text-sm text-[#4A574F]">
+                  Acesso restrito à Mesa. Entre com a senha para conferir a ata.
+                </span>
+                <Link
+                  href="/admin/login?next=/mesa"
+                  className="h-12 px-6 rounded-xl bg-[#0A5C36] hover:bg-[#073D24] text-white text-sm font-semibold flex items-center justify-center"
+                >
+                  Entrar com senha
+                </Link>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleSaveRoll = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -178,10 +261,12 @@ export function MesaAtaScreen({ standalone = false }: { standalone?: boolean }) 
             </div>
           ) : (
             filteredMembers.map((m) => (
+              <div key={m.id} className="flex items-center gap-1.5">
               <button
-                key={m.id}
                 onClick={() => toggleMemberCheck(m.id)}
-                className="w-full flex items-center gap-3 min-h-[60px] p-2 bg-transparent hover:bg-[#F4F7F5] text-left cursor-pointer transition-colors rounded-lg"
+                disabled={m.hasVoted}
+                title={m.hasVoted ? 'Já votou — a conferência não pode ser desfeita' : undefined}
+                className="flex-1 min-w-0 flex items-center gap-3 min-h-[60px] p-2 bg-transparent hover:bg-[#F4F7F5] text-left cursor-pointer transition-colors rounded-lg disabled:cursor-default disabled:hover:bg-transparent"
               >
                 <span
                   className={`w-7 h-7 shrink-0 rounded-lg border-2 flex items-center justify-center text-base font-bold transition-all ${
@@ -193,17 +278,57 @@ export function MesaAtaScreen({ standalone = false }: { standalone?: boolean }) 
                   ✓
                 </span>
                 <span className="flex-1 min-w-0 flex flex-col gap-0.5">
-                  <span className="text-[15px] font-semibold text-[#15201A] truncate">{m.name}</span>
-                  <span className="text-[13px] text-[#5A675F] tabular-nums">{m.phone}</span>
+                  <span className="text-[15px] font-semibold text-[#15201A] truncate flex items-center gap-1.5">
+                    <span className="truncate">{m.name}</span>
+                    {duplicateNames.has(m.id) && (
+                      <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">
+                        NOME REPETIDO
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-[13px] text-[#5A675F] tabular-nums">
+                    {m.phone || 'sem telefone · vota no papel'}
+                  </span>
                 </span>
                 <span className="text-xs text-[#7A867E] tabular-nums shrink-0">{m.time}</span>
               </button>
+              {m.hasVoted ? (
+                <span
+                  className={`shrink-0 text-[10px] font-bold px-2 py-1 rounded-md ${
+                    m.votedOnPaper ? 'bg-[#FBF3DC] text-[#8A6A12]' : 'bg-[#E7F0EA] text-[#0A5C36]'
+                  }`}
+                >
+                  {m.votedOnPaper ? 'VOTOU · PAPEL' : 'VOTOU · APP'}
+                </span>
+              ) : (
+                votingOpen &&
+                m.checked && (
+                  <button
+                    type="button"
+                    onClick={() => handlePaperHandout(m.id, m.name)}
+                    className="shrink-0 h-8 px-2 rounded-lg border border-[#CBD5CE] hover:border-[#8A6A12] bg-white text-[11px] font-semibold text-[#8A6A12] flex items-center gap-1 cursor-pointer"
+                    title="Entregar cédula de papel a este membro"
+                  >
+                    <FileText size={12} />
+                    Papel
+                  </button>
+                )
+              )}
+              </div>
             ))
           )}
         </div>
 
         {/* Bottom Actions */}
         <div className="p-3.5 px-5 pb-7 border-t border-[#E2E8E4] bg-white flex flex-col gap-2.5 shrink-0">
+          {actionError && (
+            <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-semibold flex justify-between items-start gap-2">
+              <span>{actionError}</span>
+              <button type="button" onClick={clearActionError} className="text-red-500 hover:text-red-700 cursor-pointer">
+                <X size={14} />
+              </button>
+            </div>
+          )}
           <div className="flex justify-between items-baseline">
             <div className="flex items-center gap-1.5">
               <span className="text-sm text-[#4A574F]">Conferidos no Livro</span>
@@ -232,7 +357,7 @@ export function MesaAtaScreen({ standalone = false }: { standalone?: boolean }) 
 
           <div className="flex flex-col gap-2">
             <button
-              onClick={publishQuorum}
+              onClick={handlePublish}
               className="h-[52px] border-none rounded-2xl bg-[#0A5C36] hover:bg-[#073D24] text-white text-base font-semibold cursor-pointer transition-colors shadow-md active:scale-[0.99]"
             >
               {publishLabel}
@@ -241,11 +366,17 @@ export function MesaAtaScreen({ standalone = false }: { standalone?: boolean }) 
             {isAdminAuthenticated && (
               <button
                 type="button"
-                onClick={() => setShowPaperModal(true)}
+                onClick={() => {
+                  refreshState();
+                  setShowPaperModal(true);
+                }}
                 className="h-[42px] rounded-xl border border-[#CBD5CE] hover:border-[#0A5C36] bg-[#F6F8F5] text-xs font-semibold text-[#15201A] flex items-center justify-center gap-2 cursor-pointer transition-colors shadow-2xs"
               >
                 <FileText size={15} className="text-[#0A5C36]" />
                 <span>Escrutínio de Cédula Física de Papel</span>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-white border border-[#CBD5CE] tabular-nums">
+                  {paperCounted}/{paperHanded} apuradas
+                </span>
               </button>
             )}
           </div>
@@ -254,7 +385,7 @@ export function MesaAtaScreen({ standalone = false }: { standalone?: boolean }) 
             <span>{publishedNote}</span>
             {votingOpen && (
               <button
-                onClick={relockVoting}
+                onClick={handleRelock}
                 className="bg-transparent border-none p-0 text-[#0A5C36] hover:text-[#073D24] font-semibold text-xs cursor-pointer underline underline-offset-2"
               >
                 Bloquear
@@ -279,6 +410,11 @@ export function MesaAtaScreen({ standalone = false }: { standalone?: boolean }) 
               </button>
             </div>
             <form onSubmit={handleAddMember} className="flex flex-col gap-3">
+              {addError && (
+                <div className="p-2.5 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
+                  {addError}
+                </div>
+              )}
               <label className="flex flex-col gap-1 text-xs font-medium text-gray-700">
                 Nome completo
                 <input
@@ -291,7 +427,7 @@ export function MesaAtaScreen({ standalone = false }: { standalone?: boolean }) 
                 />
               </label>
               <label className="flex flex-col gap-1 text-xs font-medium text-gray-700">
-                Telefone (opcional)
+                Telefone (opcional — sem telefone, o membro vota só no papel)
                 <input
                   type="tel"
                   value={manualPhone}

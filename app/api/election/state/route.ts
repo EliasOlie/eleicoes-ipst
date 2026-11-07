@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
 import { sql } from '@/lib/db';
+import { getAdminSession } from '@/lib/auth';
+import { ensureSchema } from '@/lib/election-rules';
 
 export async function GET() {
   try {
+    const isAdmin = !!(await getAdminSession());
+
     // 1. Config
     const configRows = await sql`SELECT * FROM election_config WHERE id = 1 LIMIT 1`;
     const config = configRows[0] || {
@@ -23,15 +27,21 @@ export async function GET() {
     `;
 
     // 3. Members
+    await ensureSchema(sql);
     const members = await sql`
-      SELECT id, name, phone, checked_in, checked_at, has_voted
+      SELECT id, name, phone, checked_in, checked_at, has_voted, voted_on_paper
       FROM members
       ORDER BY name ASC
     `;
+    const [paperRow] = await sql`
+      SELECT count(*)::int AS total FROM votes WHERE receipt LIKE 'PAPEL-%'
+    `;
+    const paperHanded = members.filter((m) => m.voted_on_paper).length;
 
     // 4. Votes & Tally
     const voteCountRow = await sql`SELECT count(*)::int as total FROM votes`;
     const blankCountRow = await sql`SELECT count(*)::int as total FROM votes WHERE is_blank = true`;
+    const nullCountRow = await sql`SELECT count(*)::int as total FROM votes WHERE is_null = true`;
     const tallyRows = await sql`
       SELECT candidate_id, count(*)::int as votes
       FROM vote_candidates
@@ -63,16 +73,26 @@ export async function GET() {
           .filter((c) => c.role === 'presb')
           .map((c) => [c.id, c.name, Number(c.weight)]),
       },
-      members: members.map((m) => ({
-        id: m.id,
-        name: m.name,
-        phone: m.phone,
-        checked: m.checked_in,
-        time: m.checked_at,
-        hasVoted: m.has_voted,
-      })),
+      // Nome/telefone só para a Mesa autenticada (LGPD). O público recebe
+      // apenas o necessário para contadores e para o eleitor saber se foi conferido.
+      members: members.map((m) =>
+        isAdmin
+          ? {
+              id: m.id,
+              name: m.name,
+              phone: m.phone,
+              checked: m.checked_in,
+              time: m.checked_at,
+              hasVoted: m.has_voted,
+              votedOnPaper: m.voted_on_paper,
+            }
+          : { id: m.id, checked: m.checked_in, hasVoted: m.has_voted }
+      ),
+      paperHanded,
+      paperCounted: paperRow?.total || 0,
       counted: voteCountRow[0]?.total || 0,
       blanks: blankCountRow[0]?.total || 0,
+      nulls: nullCountRow[0]?.total || 0,
       tally,
     });
   } catch (err: any) {

@@ -1,12 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Lock, User, ArrowLeft, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 
 export default function AdminLoginPage() {
-  const router = useRouter();
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -32,8 +30,9 @@ export default function AdminLoginPage() {
         return;
       }
 
-      router.push('/admin');
-      router.refresh();
+      // Recarga completa: o contexto relê a sessão e a Mesa já abre autenticada
+      const next = new URLSearchParams(window.location.search).get('next');
+      window.location.href = next && next.startsWith('/') && !next.startsWith('//') ? next : '/admin';
     } catch {
       setError('Erro de conexão com o servidor');
       setLoading(false);
@@ -125,9 +124,6 @@ export default function AdminLoginPage() {
               <ArrowLeft size={14} />
               Voltar para Cédula de Votação
             </Link>
-            <div className="text-[11px] text-[#6B776F]">
-              Credencial padrão de homologação: <code className="bg-gray-100 px-1 py-0.5 rounded text-gray-800 font-mono">admin</code> / <code className="bg-gray-100 px-1 py-0.5 rounded text-gray-800 font-mono">ipst2026</code>
-            </div>
           </div>
         </form>
       </div>

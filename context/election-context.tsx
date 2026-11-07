@@ -1,17 +1,24 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { Member, CandidateResult } from '@/types/election';
+import { getInitials, maskPhone } from '@/lib/mock-data';
 import {
-  INITIAL_DIAC,
-  INITIAL_PRESB,
-  generateMembers,
-  generateInitialCheck,
-  TOTAL_COMUNGANTES,
-  QUORUM_MINIMO,
-  getInitials,
-  maskPhone,
-} from '@/lib/mock-data';
+  STATUS_LABEL,
+  computeOfficeResults,
+  isElectionFinal,
+  majorityOf,
+} from '@/lib/election-results';
+
+async function readError(res: Response, fallback: string): Promise<string> {
+  if (res.status === 401) return 'Sessão da Mesa expirada ou não autenticada. Entre novamente com a senha.';
+  try {
+    const data = await res.json();
+    return data.error || fallback;
+  } catch {
+    return fallback;
+  }
+}
 
 interface AdminUser {
   id: number;
@@ -56,6 +63,9 @@ interface ElectionContextType {
   counted: number;
   tally: Record<string, number>;
   blanks: number;
+  /** Cédulas de papel anuladas pela Mesa (entram na base dos 50%+1) */
+  nulls: number;
+  /** 50%+1 das cédulas apuradas (brancas e nulas incluídas) */
   majority: number;
   simulationActive: boolean;
   setSimulationActive: (active: boolean) => void;
@@ -88,16 +98,31 @@ interface ElectionContextType {
   toggleCandidateSelection: (id: string) => void;
   loginMember: () => Promise<boolean>;
   confirmVote: () => Promise<void>;
-  castPaperVote: (selection: { diac: string[]; presb: string[] }) => Promise<{ success: boolean; receipt?: string; error?: string }>;
+  castPaperVote: (
+    selection: { diac: string[]; presb: string[] },
+    nullBallot?: boolean
+  ) => Promise<{ success: boolean; receipt?: string; error?: string }>;
   resetBallot: () => void;
   receipt: string;
   votingError: string;
+  voteSubmitting: boolean;
+
+  // Cédula de papel: entregues pela Mesa x apuradas pelos escrutinadores
+  paperHanded: number;
+  paperCounted: number;
+  markPaperHanded: (memberId: number) => Promise<boolean>;
 
   // Admin Session
   adminUser: AdminUser | null;
   isAdminAuthenticated: boolean;
+  authChecked: boolean;
+  features: { stressTest: boolean };
   logoutAdmin: () => Promise<void>;
   refreshState: () => Promise<void>;
+
+  // Erro da última ação da Mesa/Admin (nada é mostrado como salvo sem o servidor confirmar)
+  actionError: string;
+  clearActionError: () => void;
 }
 
 const ElectionContext = createContext<ElectionContextType | null>(null);
@@ -125,6 +150,7 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
   const [counted, setCounted] = useState(0);
   const [tally, setTally] = useState<Record<string, number>>({});
   const [blanks, setBlanks] = useState(0);
+  const [nulls, setNulls] = useState(0);
 
   // Voter session
   const [voterName, setVoterName] = useState('');
@@ -152,21 +178,32 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
 
   // Admin user state
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [features, setFeatures] = useState<{ stressTest: boolean }>({ stressTest: false });
+  const [actionError, setActionError] = useState('');
+  const [voteSubmitting, setVoteSubmitting] = useState(false);
+  const [paperHanded, setPaperHanded] = useState(0);
+  const [paperCounted, setPaperCounted] = useState(0);
+  const voteInFlight = useRef(false);
+  const isAdminRef = useRef(false);
+  useEffect(() => {
+    isAdminRef.current = !!adminUser;
+  }, [adminUser]);
 
   const restartSimulation = useCallback(async () => {
-    try {
-      await fetch('/api/election/reset', { method: 'POST' });
-    } catch {
-      setCounted(0);
-      setBlanks(0);
-      setTally({});
+    if (!window.confirm('Apagar TODOS os votos registrados e reiniciar a apuração? Esta ação não pode ser desfeita.')) {
+      return;
+    }
+    const res = await fetch('/api/election/reset', { method: 'POST' }).catch(() => null);
+    if (!res || !res.ok) {
+      setActionError(res ? await readError(res, 'Erro ao reiniciar apuração.') : 'Falha de conexão.');
     }
   }, []);
 
   // 1. Fetch State from Postgres API
   const refreshState = useCallback(async () => {
     try {
-      const res = await fetch('/api/election/state');
+      const res = await fetch('/api/election/state', { cache: 'no-store' });
       if (!res.ok) return;
       const data = await res.json();
 
@@ -187,14 +224,19 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (data.members) {
+        // Nome/telefone só chegam para a Mesa autenticada
         setMembers(
           data.members.map((m: any) => ({
             id: m.id,
-            name: m.name,
-            phone: m.phone,
-            time: m.time || '19:00',
+            name: m.name ?? '',
+            phone: m.phone ?? '',
+            time: m.time || '',
+            hasVoted: !!m.hasVoted,
+            votedOnPaper: !!m.votedOnPaper,
           }))
         );
+        setPaperHanded(data.paperHanded ?? 0);
+        setPaperCounted(data.paperCounted ?? 0);
 
         const checkMap: Record<number, boolean> = {};
         data.members.forEach((m: any) => {
@@ -205,25 +247,29 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
 
       setCounted(data.counted || 0);
       setBlanks(data.blanks || 0);
+      setNulls(data.nulls || 0);
       setTally(data.tally || {});
     } catch (e) {
       console.warn('Could not sync with Postgres API, using cached state:', e);
     }
   }, []);
 
-  // 2. Check Admin Session
+  // 2. Check Admin Session (e recarrega o estado: a Mesa recebe nomes/telefones)
   useEffect(() => {
-    fetch('/api/auth/me')
+    fetch('/api/auth/me', { cache: 'no-store' })
       .then((res) => res.json())
       .then((data) => {
+        setFeatures({ stressTest: !!data.features?.stressTest });
         if (data.authenticated && data.admin) {
           setAdminUser(data.admin);
+          refreshState();
         } else {
           setAdminUser(null);
         }
       })
-      .catch(() => setAdminUser(null));
-  }, []);
+      .catch(() => setAdminUser(null))
+      .finally(() => setAuthChecked(true));
+  }, [refreshState]);
 
   // Initial load
   useEffect(() => {
@@ -234,6 +280,23 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     let eventSource: EventSource | null = null;
     let isMounted = true;
+    let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+
+    // Mesa: novos cadastros chegam sem telefone pelo canal público; busca a lista completa (agrupado)
+    const scheduleAdminRefresh = () => {
+      if (!isAdminRef.current || refreshTimer) return;
+      refreshTimer = setTimeout(() => {
+        refreshTimer = null;
+        refreshState();
+      }, 800);
+    };
+
+    // Plano B: enquanto o tempo real (Redis/SSE) não estiver confirmado, atualiza a cada 10s.
+    // "Saudável" = recebeu CONNECTED (só chega quando o servidor assinou o Redis).
+    let sseHealthy = false;
+    const pollTimer = setInterval(() => {
+      if (!sseHealthy) refreshState();
+    }, 10000);
 
     try {
       eventSource = new EventSource('/api/realtime');
@@ -244,10 +307,28 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
           const payload = JSON.parse(event.data);
 
           switch (payload.type) {
+            case 'CONNECTED':
+              // (Re)conectou: sincroniza o que pode ter sido perdido enquanto estava fora
+              if (!sseHealthy) {
+                sseHealthy = true;
+                refreshState();
+              }
+              break;
+
             case 'VOTE_CAST':
               if (payload.counted !== undefined) setCounted(payload.counted);
               if (payload.blanks !== undefined) setBlanks(payload.blanks);
+              if (payload.nulls !== undefined) setNulls(payload.nulls);
               if (payload.tally) setTally(payload.tally);
+              if (typeof payload.paperCounted === 'number') setPaperCounted(payload.paperCounted);
+              // Mesa: atualiza o status "votou" da lista (o evento não diz quem votou — sigilo)
+              scheduleAdminRefresh();
+              break;
+
+            case 'PAPER_HANDED':
+              if (typeof payload.paperHanded === 'number') setPaperHanded(payload.paperHanded);
+              if (typeof payload.paperCounted === 'number') setPaperCounted(payload.paperCounted);
+              scheduleAdminRefresh();
               break;
 
             case 'QUORUM_PUBLISHED':
@@ -256,8 +337,16 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
               if (payload.publishedAt) setPublishedAt(payload.publishedAt);
               break;
 
+            case 'QUORUM_UPDATED':
+              if (typeof payload.published === 'number') setPublished(payload.published);
+              break;
+
             case 'VOTING_RELOCKED':
               setVotingOpen(false);
+              break;
+
+            case 'DATABASE_CLEANED':
+              refreshState();
               break;
 
             case 'MEMBER_CHECKED':
@@ -275,22 +364,11 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
 
             case 'MEMBER_REGISTERED':
               if (payload.member) {
-                setMembers((prev) => {
-                  if (prev.some((m) => m.id === payload.member.id)) return prev;
-                  return [
-                    ...prev,
-                    {
-                      id: payload.member.id,
-                      name: payload.member.name,
-                      phone: payload.member.phone,
-                      time: payload.member.time || '19:00',
-                    },
-                  ].sort((a, b) => a.name.localeCompare(b.name));
-                });
                 setChecked((prev) => ({
                   ...prev,
                   [payload.member.id]: !!payload.member.checked,
                 }));
+                scheduleAdminRefresh();
               }
               break;
 
@@ -311,7 +389,8 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
       };
 
       eventSource.onerror = () => {
-        // Will auto reconnect
+        // O navegador reconecta sozinho; até lá o polling acima cobre
+        sseHealthy = false;
       };
     } catch {
       // SSE unsupported or offline
@@ -319,6 +398,8 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       isMounted = false;
+      clearInterval(pollTimer);
+      if (refreshTimer) clearTimeout(refreshTimer);
       if (eventSource) eventSource.close();
     };
   }, [refreshState]);
@@ -330,9 +411,11 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
 
   const loggedCount = members.length;
   const pendingCount = loggedCount - confirmedCount;
-  const majority = Math.floor(published / 2) + 1;
-  const maxV = Math.max(1, published);
-  const isCompleted = counted >= published && published > 0;
+  // Regra da eleição (fonte única em lib/election-results.ts): eleito precisa de
+  // 50%+1 das CÉDULAS APURADAS (brancas e nulas incluídas).
+  const majority = majorityOf(counted);
+  // Resultado só é definitivo com a votação encerrada e todo o papel entregue apurado
+  const isCompleted = isElectionFinal({ published, votingOpen, counted, paperCounted, paperHanded });
   // Quórum estatutário da Assembleia IPB: 50% dos membros comungantes
   const quorumMinimo = Math.ceil(totalComungantes * 0.5);
   const currentAttendance = votingOpen ? published : confirmedCount;
@@ -346,30 +429,41 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
       : !!loggedMemberData.checked;
   }, [loggedMemberData, checked]);
 
-  const statusLabel = !votingOpen
-    ? 'Votação não iniciada'
-    : isCompleted
+  const statusLabel = isCompleted
     ? 'Apuração concluída'
-    : 'Apuração em andamento';
+    : votingOpen
+    ? 'Votação em andamento'
+    : published > 0
+    ? 'Votação encerrada · apurando cédulas de papel'
+    : 'Votação não iniciada';
 
-  const statusColor = !votingOpen ? '#8A6A12' : '#0A5C36';
-  const statusBg = !votingOpen ? '#FBF3DC' : '#E7F0EA';
+  const statusColor = isCompleted || votingOpen ? '#0A5C36' : '#8A6A12';
+  const statusBg = isCompleted || votingOpen ? '#E7F0EA' : '#FBF3DC';
 
   // Toggle member checked in ata (Postgres + Redis)
   const toggleMemberCheck = useCallback(
     async (id: number) => {
       const nextVal = !checked[id];
-      // Optimistic update
+      // Otimista, mas desfaz se o servidor não confirmar
       setChecked((prev) => ({ ...prev, [id]: nextVal }));
+      setActionError('');
 
       try {
-        await fetch('/api/election/mesa/toggle-check', {
+        const res = await fetch('/api/election/mesa/toggle-check', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ memberId: id, checked: nextVal }),
         });
-      } catch (err) {
-        console.error('Failed to sync member check with backend:', err);
+        if (!res.ok) {
+          setChecked((prev) => ({ ...prev, [id]: !nextVal }));
+          setActionError(await readError(res, 'Não foi possível salvar a conferência.'));
+          return;
+        }
+        const data = await res.json().catch(() => ({}));
+        if (typeof data.published === 'number') setPublished(data.published);
+      } catch {
+        setChecked((prev) => ({ ...prev, [id]: !nextVal }));
+        setActionError('Falha de conexão: a conferência NÃO foi salva. Tente novamente.');
       }
     },
     [checked]
@@ -398,82 +492,83 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
     const d = new Date();
     const pad = (n: number) => String(n).padStart(2, '0');
     const timeStr = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-
-    // Optimistic
-    setVotingOpen(true);
-    setPublished(confirmedCount);
-    setPublishedAt(timeStr);
+    setActionError('');
 
     try {
-      await fetch('/api/election/mesa/publish-quorum', {
+      const res = await fetch('/api/election/mesa/publish-quorum', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ publishedAt: timeStr }),
       });
-    } catch (e) {
-      console.error('Failed to publish quorum on server:', e);
-    }
-  }, [confirmedCount]);
-
-  const relockVoting = useCallback(async () => {
-    setVotingOpen(false);
-    try {
-      await fetch('/api/election/mesa/relock', { method: 'POST' });
-    } catch (e) {
-      console.error('Failed to relock voting on server:', e);
+      if (!res.ok) {
+        setActionError(await readError(res, 'Não foi possível liberar a votação.'));
+        return;
+      }
+      const data = await res.json();
+      setVotingOpen(true);
+      setPublished(data.published ?? 0);
+      setPublishedAt(data.publishedAt || timeStr);
+    } catch {
+      setActionError('Falha de conexão: a votação NÃO foi liberada. Tente novamente.');
     }
   }, []);
 
-  // Update Vacancies (Postgres + Redis)
+  const relockVoting = useCallback(async () => {
+    setActionError('');
+    try {
+      const res = await fetch('/api/election/mesa/relock', { method: 'POST' });
+      if (!res.ok) {
+        setActionError(await readError(res, 'Não foi possível bloquear a votação.'));
+        return;
+      }
+      setVotingOpen(false);
+    } catch {
+      setActionError('Falha de conexão: a votação NÃO foi bloqueada. Tente novamente.');
+    }
+  }, []);
+
+  // Configuração (vagas / rol): só altera a tela depois que o servidor confirmar
+  const saveConfig = useCallback(async (body: Record<string, number>): Promise<boolean> => {
+    setActionError('');
+    try {
+      const res = await fetch('/api/election/candidates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        setActionError(await readError(res, 'Não foi possível salvar a configuração.'));
+        return false;
+      }
+      return true;
+    } catch {
+      setActionError('Falha de conexão: a alteração NÃO foi salva.');
+      return false;
+    }
+  }, []);
+
   const setVd = useCallback(
     async (val: number | ((prev: number) => number)) => {
       const nextVal = typeof val === 'function' ? val(vd) : val;
-      setVdInternal(nextVal);
-      try {
-        await fetch('/api/election/candidates', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ vagasDiac: nextVal }),
-        });
-      } catch (e) {
-        console.error('Failed to update vacancies:', e);
-      }
+      if (await saveConfig({ vagasDiac: nextVal })) setVdInternal(nextVal);
     },
-    [vd]
+    [vd, saveConfig]
   );
 
   const setVp = useCallback(
     async (val: number | ((prev: number) => number)) => {
       const nextVal = typeof val === 'function' ? val(vp) : val;
-      setVpInternal(nextVal);
-      try {
-        await fetch('/api/election/candidates', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ vagasPresb: nextVal }),
-        });
-      } catch (e) {
-        console.error('Failed to update vacancies:', e);
-      }
+      if (await saveConfig({ vagasPresb: nextVal })) setVpInternal(nextVal);
     },
-    [vp]
+    [vp, saveConfig]
   );
 
   const setTotalComungantesServer = useCallback(
     async (val: number | ((prev: number) => number)) => {
       const nextVal = typeof val === 'function' ? val(totalComungantes) : val;
-      setTotalComungantes(nextVal);
-      try {
-        await fetch('/api/election/candidates', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ totalComungantes: nextVal }),
-        });
-      } catch (e) {
-        console.error('Failed to update total comungantes:', e);
-      }
+      if (await saveConfig({ totalComungantes: nextVal })) setTotalComungantes(nextVal);
     },
-    [totalComungantes]
+    [totalComungantes, saveConfig]
   );
 
   // Add / Remove Candidates (Postgres + Redis)
@@ -481,35 +576,43 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
     async (role: 'diac' | 'presb', name: string) => {
       const trimmed = name.trim();
       if (!trimmed) return;
+      setActionError('');
       try {
         const res = await fetch('/api/election/candidates', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ role, name: trimmed }),
         });
-        const data = await res.json();
-        if (data.id) {
-          if (role === 'diac') {
-            setDiac((prev) => [...prev, [data.id, trimmed, 2]]);
-          } else {
-            setPresb((prev) => [...prev, [data.id, trimmed, 2]]);
-          }
-          setTally((prev) => ({ ...prev, [data.id]: 0 }));
+        if (!res.ok) {
+          setActionError(await readError(res, 'Não foi possível adicionar o candidato.'));
+          return;
         }
-      } catch (e) {
-        console.error('Failed to add candidate:', e);
+        const data = await res.json();
+        if (role === 'diac') {
+          setDiac((prev) => [...prev, [data.id, data.name, 2]]);
+        } else {
+          setPresb((prev) => [...prev, [data.id, data.name, 2]]);
+        }
+        setTally((prev) => ({ ...prev, [data.id]: 0 }));
+      } catch {
+        setActionError('Falha de conexão: o candidato NÃO foi adicionado.');
       }
     },
     []
   );
 
   const removeCandidate = useCallback(async (role: 'diac' | 'presb', id: string) => {
+    setActionError('');
     try {
-      await fetch('/api/election/candidates', {
+      const res = await fetch('/api/election/candidates', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id }),
       });
+      if (!res.ok) {
+        setActionError(await readError(res, 'Não foi possível remover o candidato.'));
+        return;
+      }
       if (role === 'diac') {
         setDiac((prev) => prev.filter((c) => c[0] !== id));
         setSelection((prev) => ({ ...prev, diac: prev.diac.filter((x) => x !== id) }));
@@ -517,42 +620,40 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
         setPresb((prev) => prev.filter((c) => c[0] !== id));
         setSelection((prev) => ({ ...prev, presb: prev.presb.filter((x) => x !== id) }));
       }
-    } catch (e) {
-      console.error('Failed to remove candidate:', e);
+    } catch {
+      setActionError('Falha de conexão: o candidato NÃO foi removido.');
     }
   }, []);
 
   // Compute results
   const computeResults = useCallback(
     (list: [string, string, number][], vagasLimit: number): CandidateResult[] => {
-      const sorted = list
-        .map(([id, name]) => ({
-          id,
-          name,
-          initials: getInitials(name),
-          votes: tally[id] || 0,
-        }))
-        .sort((a, b) => b.votes - a.votes);
-
-      return sorted.map((r, i) => {
-        // Os mais votados preenchem as vagas disponíveis (desde que tenham ao menos 1 voto)
-        const elected = i < vagasLimit && r.votes > 0;
-        const reachedMajority = r.votes >= majority;
-        const pctVal = maxV > 0 ? Math.round((r.votes / maxV) * 100) : 0;
-        return {
-          ...r,
-          elected,
-          reachedMajority,
-          width: `${Math.min(100, maxV > 0 ? (r.votes / maxV) * 100 : 0)}%`,
-          bar: elected ? '#9FD3B1' : '#5FA57B',
-          pct: `${pctVal}%`,
-          sit: elected ? 'Eleito' : isCompleted ? 'Não eleito' : 'Em apuração',
-          sitColor: elected ? '#0A5C36' : '#6B776F',
-          sitBg: elected ? '#E7F0EA' : '#F1F3F1',
-        };
-      });
+      // Regra em lib/election-results.ts (mesma usada no CSV e em /relatorios)
+      const core = computeOfficeResults(
+        list.map(([id, name]) => ({ id, name })),
+        tally,
+        vagasLimit,
+        counted,
+        isCompleted
+      );
+      return core.map((r) => ({
+        id: r.id,
+        name: r.name,
+        initials: getInitials(r.name),
+        votes: r.votes,
+        elected: r.elected,
+        provisional: r.provisional,
+        tied: r.tied,
+        reachedMajority: r.reachedMajority,
+        width: `${Math.min(100, r.pctOfBallots)}%`,
+        bar: r.elected ? '#9FD3B1' : r.provisional ? '#7CC497' : r.tied ? '#E8C46A' : '#5FA57B',
+        pct: `${Math.round(r.pctOfBallots)}%`,
+        sit: STATUS_LABEL[r.status],
+        sitColor: r.elected || r.provisional ? '#0A5C36' : r.tied ? '#8A6A12' : '#6B776F',
+        sitBg: r.elected ? '#E7F0EA' : r.provisional ? '#EEF6F0' : r.tied ? '#FBF3DC' : '#F1F3F1',
+      }));
     },
-    [tally, majority, maxV, isCompleted]
+    [tally, isCompleted, counted]
   );
 
   const resDiac = useMemo(() => computeResults(diac, vd), [computeResults, diac, vd]);
@@ -621,6 +722,10 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
 
   // Cast vote e2e with Postgres & Redis
   const confirmVote = useCallback(async () => {
+    // Trava síncrona: toque duplo / clique duplo não envia duas vezes
+    if (voteInFlight.current) return;
+    voteInFlight.current = true;
+    setVoteSubmitting(true);
     setVotingError('');
 
     try {
@@ -628,13 +733,14 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          memberId: loggedMemberData?.id,
           name: voterName,
           phone: voterPhone,
           selection,
         }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
         setVotingError(data.error || 'Erro ao registrar voto');
@@ -644,23 +750,59 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
       setReceipt(data.receipt);
       setBallotStep('done');
     } catch {
-      setVotingError('Falha na conexão ao computar voto. Tente novamente.');
+      setVotingError('Falha na conexão ao computar voto. Verifique a internet e toque em Confirmar novamente.');
+    } finally {
+      voteInFlight.current = false;
+      setVoteSubmitting(false);
     }
-  }, [voterName, voterPhone, selection]);
+  }, [voterName, voterPhone, selection, loggedMemberData]);
+
+  // Mesa entrega cédula de papel: o membro passa a constar como "já votou"
+  const markPaperHanded = useCallback(
+    async (memberId: number): Promise<boolean> => {
+      setActionError('');
+      try {
+        const res = await fetch('/api/election/mesa/paper-handout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ memberId }),
+        });
+        if (!res.ok) {
+          setActionError(await readError(res, 'Não foi possível registrar a entrega da cédula.'));
+          return false;
+        }
+        const data = await res.json();
+        setPaperHanded(data.paperHanded ?? 0);
+        setPaperCounted(data.paperCounted ?? 0);
+        setMembers((prev) =>
+          prev.map((m) => (m.id === memberId ? { ...m, hasVoted: true, votedOnPaper: true } : m))
+        );
+        return true;
+      } catch {
+        setActionError('Falha de conexão: a entrega da cédula NÃO foi registrada.');
+        return false;
+      }
+    },
+    []
+  );
 
   // Cast paper vote for elderly or manual contingency
   const castPaperVote = useCallback(
-    async (paperSelection: { diac: string[]; presb: string[] }) => {
+    async (paperSelection: { diac: string[]; presb: string[] }, nullBallot = false) => {
       try {
         const res = await fetch('/api/election/vote/paper', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ selection: paperSelection }),
+          body: JSON.stringify(nullBallot ? { nullBallot: true } : { selection: paperSelection }),
         });
         const data = await res.json();
         if (!res.ok) {
-          return { success: false, error: data.error || 'Erro ao computar cédula de papel' };
+          return {
+            success: false,
+            error: res.status === 401 ? 'Sessão expirada. Entre novamente.' : data.error || 'Erro ao computar cédula de papel',
+          };
         }
+        if (typeof data.paperCount === 'number') setPaperCounted(data.paperCount);
         return { success: true, receipt: data.receipt, totalCounted: data.totalCounted };
       } catch {
         return { success: false, error: 'Falha na conexão ao registrar cédula de papel.' };
@@ -688,6 +830,8 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
       await fetch('/api/auth/logout', { method: 'POST' });
     } finally {
       setAdminUser(null);
+      // Recarrega para limpar nomes/telefones que estavam na memória da tela
+      window.location.href = '/admin/login';
     }
   }, []);
 
@@ -722,6 +866,7 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
     counted,
     tally,
     blanks,
+    nulls,
     majority,
     simulationActive,
     setSimulationActive,
@@ -756,10 +901,18 @@ export function ElectionProvider({ children }: { children: React.ReactNode }) {
     resetBallot,
     receipt,
     votingError,
+    voteSubmitting,
+    paperHanded,
+    paperCounted,
+    markPaperHanded,
     adminUser,
     isAdminAuthenticated: !!adminUser,
+    authChecked,
+    features,
     logoutAdmin,
     refreshState,
+    actionError,
+    clearActionError: () => setActionError(''),
   };
 
   return <ElectionContext.Provider value={value}>{children}</ElectionContext.Provider>;

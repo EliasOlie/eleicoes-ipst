@@ -19,6 +19,7 @@ export function VoterBallotScreen({ standalone = false }: { standalone?: boolean
     resetBallot,
     receipt,
     votingError,
+    voteSubmitting,
     diac,
     presb,
     vd,
@@ -217,13 +218,18 @@ export function VoterBallotScreen({ standalone = false }: { standalone?: boolean
             <div className="mt-auto flex flex-col gap-2.5 pt-2">
               <button
                 onClick={confirmVote}
-                className="h-[54px] border-none rounded-2xl bg-[#0A5C36] hover:bg-[#073D24] text-white text-base font-semibold cursor-pointer transition-colors shadow-md active:scale-[0.99]"
+                disabled={voteSubmitting}
+                className="h-[54px] border-none rounded-2xl bg-[#0A5C36] hover:bg-[#073D24] text-white text-base font-semibold cursor-pointer transition-colors shadow-md active:scale-[0.99] disabled:opacity-60 disabled:cursor-wait flex items-center justify-center gap-2"
               >
-                Confirmar voto
+                {voteSubmitting && (
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                )}
+                {voteSubmitting ? 'Registrando voto...' : 'Confirmar voto'}
               </button>
               <button
                 onClick={() => setBallotStep('vote')}
-                className="h-[50px] border-[1.5px] border-[#CBD5CE] rounded-2xl bg-white hover:bg-[#F6F8F6] text-[#15201A] text-[15px] font-semibold cursor-pointer transition-colors"
+                disabled={voteSubmitting}
+                className="h-[50px] border-[1.5px] border-[#CBD5CE] rounded-2xl bg-white hover:bg-[#F6F8F6] text-[#15201A] text-[15px] font-semibold cursor-pointer transition-colors disabled:opacity-50"
               >
                 Voltar e alterar
               </button>
@@ -263,7 +269,7 @@ export function VoterBallotScreen({ standalone = false }: { standalone?: boolean
               onClick={resetBallot}
               className="mt-auto bg-transparent border-none text-[#0A5C36] hover:text-[#073D24] font-semibold text-sm cursor-pointer underline underline-offset-4"
             >
-              Reiniciar mock / Novo voto
+              Concluir e sair
             </button>
           </div>
         )}

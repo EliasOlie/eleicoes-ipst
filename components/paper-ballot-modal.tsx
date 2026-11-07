@@ -17,7 +17,10 @@ export function PaperBallotModal({
     vagasDiac,
     vagasPresb,
     castPaperVote,
+    paperHanded,
+    paperCounted,
   } = useElection();
+  const remaining = Math.max(0, paperHanded - paperCounted);
 
   const [selection, setSelection] = useState<{ diac: string[]; presb: string[] }>({
     diac: [],
@@ -45,6 +48,26 @@ export function PaperBallotModal({
       if (prev.presb.length >= vagasPresb) return prev;
       return { ...prev, presb: [...prev.presb, id] };
     });
+  };
+
+  const handleNull = async () => {
+    if (
+      !window.confirm(
+        'Registrar esta cédula como NULA?\n\nEla não dá voto a ninguém, mas conta no total de cédulas (base dos 50%+1).'
+      )
+    ) {
+      return;
+    }
+    setSubmitting(true);
+    setErrorMsg('');
+    const res = await castPaperVote({ diac: [], presb: [] }, true);
+    setSubmitting(false);
+    if (!res.success) {
+      setErrorMsg(res.error || 'Erro ao registrar cédula nula');
+      return;
+    }
+    setLastReceipt(`${res.receipt || 'PAPEL'} (nula)`);
+    setSelection({ diac: [], presb: [] });
   };
 
   const handleCompute = async () => {
@@ -85,6 +108,24 @@ export function PaperBallotModal({
           >
             <X size={18} />
           </button>
+        </div>
+
+        {/* Conferência: apuradas nunca passam das entregues pela Mesa */}
+        <div className="bg-[#F6F8F5] border-b border-gray-200 px-6 py-2.5 grid grid-cols-3 gap-2 text-center text-xs">
+          <div>
+            <div className="text-lg font-bold tabular-nums text-[#15201A]">{paperHanded}</div>
+            <div className="text-gray-500">entregues pela Mesa</div>
+          </div>
+          <div>
+            <div className="text-lg font-bold tabular-nums text-[#0A5C36]">{paperCounted}</div>
+            <div className="text-gray-500">apuradas</div>
+          </div>
+          <div>
+            <div className={`text-lg font-bold tabular-nums ${remaining === 0 ? 'text-amber-700' : 'text-[#15201A]'}`}>
+              {remaining}
+            </div>
+            <div className="text-gray-500">restam na urna</div>
+          </div>
         </div>
 
         {/* Feedback alert */}
@@ -206,6 +247,15 @@ export function PaperBallotModal({
           <div className="flex items-center gap-3">
             <button
               type="button"
+              disabled={submitting || remaining === 0}
+              onClick={handleNull}
+              className="px-3.5 py-2.5 rounded-xl border border-red-200 bg-white hover:bg-red-50 text-xs font-semibold text-red-700 cursor-pointer disabled:opacity-50"
+              title="Cédula rasurada, com marcações demais ou ilegível"
+            >
+              Cédula nula
+            </button>
+            <button
+              type="button"
               onClick={onClose}
               className="px-4 py-2.5 text-xs font-semibold text-gray-600 hover:text-gray-800 cursor-pointer"
             >
@@ -213,7 +263,8 @@ export function PaperBallotModal({
             </button>
             <button
               type="button"
-              disabled={submitting}
+              disabled={submitting || remaining === 0}
+              title={remaining === 0 ? 'Nenhuma cédula entregue pendente de apuração' : undefined}
               onClick={handleCompute}
               className="px-5 py-2.5 rounded-xl bg-[#0A5C36] hover:bg-[#073D24] text-white text-xs font-semibold shadow-md active:scale-95 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50"
             >

@@ -12,6 +12,7 @@ export function ProjetorScreen({ standalone = false }: { standalone?: boolean })
     counted,
     majority,
     blanks,
+    nulls,
     resDiac,
     resPresb,
     vagasDiac,
@@ -21,6 +22,7 @@ export function ProjetorScreen({ standalone = false }: { standalone?: boolean })
     restartSimulation,
     simulationActive,
     setSimulationActive,
+    isAdminAuthenticated,
     quorumMinimo,
     totalComungantes,
     quorumAtingido,
@@ -73,16 +75,22 @@ export function ProjetorScreen({ standalone = false }: { standalone?: boolean })
 
   const attendeesCount = votingOpen ? published : confirmedCount;
   const maxV = Math.max(1, published);
-  const majPct = `${Math.min(100, (majority / maxV) * 100)}%`;
+  // Linha da maioria: 50%+1 das cédulas apuradas (as barras também são relativas às cédulas)
+  const majPct = `${Math.min(100, counted > 0 ? (majority / counted) * 100 : 0)}%`;
   const pctCounted = maxV > 0 ? Math.round((counted / maxV) * 100) : 0;
+  const filled = (res: typeof resDiac) => res.filter((c) => c.elected || c.provisional).length;
+  const openSeats = (res: typeof resDiac, vagas: number) =>
+    res.some((c) => c.tied) ? 0 : Math.max(0, vagas - filled(res));
   const quorumPct = quorumMinimo > 0 ? Math.min(100, Math.round((attendeesCount / quorumMinimo) * 100)) : 0;
 
-  const liveColor = !votingOpen ? '#E8C46A' : isCompleted ? '#C9D3CC' : '#7EE0A0';
-  const liveLabel = !votingOpen
-    ? 'Aguardando quórum'
-    : isCompleted
+  const liveColor = isCompleted ? '#C9D3CC' : votingOpen ? '#7EE0A0' : '#E8C46A';
+  const liveLabel = isCompleted
     ? 'Apuração encerrada'
-    : 'Apuração ao vivo';
+    : votingOpen
+    ? 'Votação em andamento'
+    : published > 0
+    ? 'Apurando cédulas de papel'
+    : 'Aguardando quórum';
 
   return (
     <div
@@ -338,10 +346,15 @@ export function ProjetorScreen({ standalone = false }: { standalone?: boolean })
               </div>
 
               <div className="p-5 px-6 rounded-2xl bg-white/[0.08] flex flex-col gap-1 border border-white/10 backdrop-blur-xs shadow-xs">
-                <span className="text-sm md:text-base text-[#A9CDB6] font-medium">Maioria absoluta</span>
+                <span className="text-sm md:text-base text-[#A9CDB6] font-medium">
+                  Para ser eleito (50% + 1)
+                </span>
                 <span className="text-3xl md:text-4xl lg:text-5xl font-bold tabular-nums tracking-tight">
-                  {majority}{' '}
+                  {counted > 0 ? majority : '—'}{' '}
                   <span className="text-lg md:text-2xl text-[#A9CDB6] font-normal">votos</span>
+                </span>
+                <span className="text-xs text-[#A9CDB6]">
+                  de {counted} cédula{counted === 1 ? '' : 's'} (brancas e nulas incluídas)
                 </span>
               </div>
             </div>
@@ -360,7 +373,12 @@ export function ProjetorScreen({ standalone = false }: { standalone?: boolean })
                     </span>
                   </div>
                   <span className="text-xs md:text-sm text-[#A9CDB6]">
-                    {resDiac.filter((c) => c.elected).length} de {vagasDiac} preenchidas
+                    {filled(resDiac)} de {vagasDiac} {isCompleted ? 'preenchidas' : 'com maioria'}
+                    {isCompleted && openSeats(resDiac, vagasDiac) > 0 && (
+                      <span className="ml-2 font-semibold text-amber-300">
+                        · {openSeats(resDiac, vagasDiac)} sem maioria
+                      </span>
+                    )}
                   </span>
                 </div>
 
@@ -379,6 +397,16 @@ export function ProjetorScreen({ standalone = false }: { standalone?: boolean })
                             {r.elected && (
                               <span className="text-[11px] md:text-xs font-black tracking-wider px-2.5 py-0.5 rounded-md bg-[#E8F3EC] text-[#073D24] shadow-sm animate-in fade-in duration-300">
                                 ELEITO
+                              </span>
+                            )}
+                            {r.provisional && (
+                              <span className="text-[11px] md:text-xs font-black tracking-wider px-2.5 py-0.5 rounded-md bg-[#0A5C36] text-[#CFE9D7] border border-[#9FD3B1]/40">
+                                MAIORIA
+                              </span>
+                            )}
+                            {r.tied && (
+                              <span className="text-[11px] md:text-xs font-black tracking-wider px-2.5 py-0.5 rounded-md bg-amber-300 text-[#3D2E05] shadow-sm">
+                                EMPATE
                               </span>
                             )}
                           </span>
@@ -422,7 +450,12 @@ export function ProjetorScreen({ standalone = false }: { standalone?: boolean })
                     </span>
                   </div>
                   <span className="text-xs md:text-sm text-[#A9CDB6]">
-                    {resPresb.filter((c) => c.elected).length} de {vagasPresb} preenchidas
+                    {filled(resPresb)} de {vagasPresb} {isCompleted ? 'preenchidas' : 'com maioria'}
+                    {isCompleted && openSeats(resPresb, vagasPresb) > 0 && (
+                      <span className="ml-2 font-semibold text-amber-300">
+                        · {openSeats(resPresb, vagasPresb)} sem maioria
+                      </span>
+                    )}
                   </span>
                 </div>
 
@@ -441,6 +474,16 @@ export function ProjetorScreen({ standalone = false }: { standalone?: boolean })
                             {r.elected && (
                               <span className="text-[11px] md:text-xs font-black tracking-wider px-2.5 py-0.5 rounded-md bg-[#E8F3EC] text-[#073D24] shadow-sm animate-in fade-in duration-300">
                                 ELEITO
+                              </span>
+                            )}
+                            {r.provisional && (
+                              <span className="text-[11px] md:text-xs font-black tracking-wider px-2.5 py-0.5 rounded-md bg-[#0A5C36] text-[#CFE9D7] border border-[#9FD3B1]/40">
+                                MAIORIA
+                              </span>
+                            )}
+                            {r.tied && (
+                              <span className="text-[11px] md:text-xs font-black tracking-wider px-2.5 py-0.5 rounded-md bg-amber-300 text-[#3D2E05] shadow-sm">
+                                EMPATE
                               </span>
                             )}
                           </span>
@@ -480,13 +523,21 @@ export function ProjetorScreen({ standalone = false }: { standalone?: boolean })
           <div className="flex items-center gap-4 flex-wrap">
             <span className="flex items-center gap-2">
               <span className="w-1.5 h-3 bg-white inline-block rounded-xs"></span>
-              Linha branca = referência de maioria absoluta ({majority} votos)
+              Linha branca = 50% + 1 das cédulas ({counted > 0 ? majority : '—'} votos)
             </span>
             <span className="text-white/40">·</span>
-            <span>Votos em branco: <strong className="text-white">{blanks}</strong></span>
+            <span>Brancos: <strong className="text-white">{blanks}</strong></span>
+            <span className="text-white/40">·</span>
+            <span>Nulos: <strong className="text-white">{nulls}</strong></span>
+            {!isCompleted && counted > 0 && (
+              <>
+                <span className="text-white/40">·</span>
+                <span className="text-amber-300 font-semibold">Resultado provisório</span>
+              </>
+            )}
           </div>
 
-          {!standalone && (
+          {!standalone && isAdminAuthenticated && (
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setSimulationActive(!simulationActive)}

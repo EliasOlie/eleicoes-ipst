@@ -1,5 +1,6 @@
 // Service Worker for Eleição IPB Serra Talhada (PWA)
-const CACHE_NAME = 'eleicoes-ipst-v1';
+// v2: a v1 guardava respostas da API (estado da votação) em cache — o activate apaga caches antigos.
+const CACHE_NAME = 'eleicoes-ipst-v2';
 const ASSETS_TO_CACHE = [
   '/',
   '/manifest.webmanifest',
@@ -39,6 +40,9 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(event.request.url);
 
+  // API e tempo real: SEMPRE rede, nunca cache (estado da votação muda a cada segundo)
+  if (url.origin !== self.location.origin || url.pathname.startsWith('/api/')) return;
+
   // Network-first for dynamic navigation, cache-fallback
   if (event.request.mode === 'navigate') {
     event.respondWith(
@@ -71,7 +75,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Stale-while-revalidate for everything else
+  // Stale-while-revalidate só para arquivos estáticos do build
+  if (!url.pathname.startsWith('/_next/static/')) return;
   event.respondWith(
     caches.match(event.request).then((cached) => {
       const fetchPromise = fetch(event.request)
