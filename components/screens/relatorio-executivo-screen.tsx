@@ -400,7 +400,7 @@ export function RelatorioExecutivoScreen({ standalone = false }: { standalone?: 
     );
   }
 
-  // Embedded view (e.g. inside /canvas preview)
+  // Embedded view (componente sem a barra lateral)
   return (
     <div className="flex flex-col gap-3.5 w-full max-w-[1440px] mx-auto">
       <div className="text-sm font-semibold text-[#4A574F] no-print">

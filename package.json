@@ -10,7 +10,6 @@
     "lint": "eslint",
     "db:init": "node db/init.mjs",
     "db:clean": "node db/clean.mjs",
-    "pdf:cedula": "node scripts/generate-ballots-pdf.mjs",
     "icons": "node scripts/generate-favicon.mjs",
     "admin:password": "node scripts/set-admin-password.mjs",
     "test:stress": "node scripts/stress-test.mjs"
