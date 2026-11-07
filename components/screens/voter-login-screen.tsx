@@ -138,6 +138,10 @@ export function VoterLoginScreen({ standalone = false }: { standalone?: boolean 
             <div className="text-[#5A675F]">
               <strong>Sigilo inviolável:</strong> O conteúdo da sua cédula de voto é 100% secreto e anônimo.
             </div>
+            <div className="text-[#5A675F]">
+              <strong>Uso dos seus dados:</strong> Seu nome e telefone serão usados para esta eleição e para
+              manter o cadastro de membros da IPST. Em quem você votou nunca é ligado aos seus dados.
+            </div>
           </div>
 
           {/* Shortcut links at bottom */}
